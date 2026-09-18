@@ -267,6 +267,9 @@
         .floor-preview.ice { background-color: #2b9ed8; background-image: linear-gradient(rgba(255,255,255,.92) 2px, transparent 2px), linear-gradient(90deg, rgba(255,255,255,.92) 2px, transparent 2px); background-size: 17px 17px; }
         .floor-preview.deep { background-color: #123f78; background-image: linear-gradient(rgba(255,255,255,.72) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.72) 1px, transparent 1px); background-size: 9px 9px; }
         .wallet { display: inline-flex; align-items: center; gap: 5px; color: #ffd166; background: rgba(255,209,102,.15); border: 1px solid rgba(255,209,102,.45); border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 950; }
+        .coin-icon { display: inline-grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; color: #7b4b00; background: radial-gradient(circle at 32% 27%, #fff5b0 0 10%, #ffd166 22%, #f59e0b 65%, #b86b00 100%); border: 2px solid #ffe9a3; box-shadow: inset 0 0 0 1px #c77b00, 0 1px 5px rgba(255,177,0,.65); font: 950 9px Georgia, serif; line-height: 1; }
+        .coin-icon::before { content: '$'; transform: translateY(-.5px); }
+        .coin-icon.large { width: 22px; height: 22px; font-size: 11px; }
         .shop-panel { margin-top: 12px; padding: 10px; border-radius: 16px; background: rgba(23,38,82,0.08); border: 1px solid rgba(38,65,116,0.18); }
         .shop-title { display: flex; justify-content: space-between; align-items: center; color: #4f5d7a; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
         .shop-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
@@ -387,7 +390,7 @@
         <div class="top-bar">
             <div class="left-hud">
                 <div class="score-box" id="score-display">Skor: 0</div>
-                <div class="wallet">🪙 <span id="match-gold">0</span></div>
+                <div class="wallet"><span class="coin-icon" aria-hidden="true"></span><span id="match-gold">0</span></div>
                 <div class="viral-box">
                     <div class="viral-label"><span>🔥 Viral</span><span id="viral-label">0%</span></div>
                     <div class="viral-track"><div id="viral-fill" class="viral-fill"></div></div>
@@ -436,7 +439,7 @@
                 </div>
             </div>
             <div class="menu-main">
-                <div class="wallet">🪙 <span id="wallet-gold">0</span> ALTIN</div>
+                <div class="wallet"><span class="coin-icon" aria-hidden="true"></span><span id="wallet-gold">0</span> ALTIN</div>
                 <div id="game-over-stats" class="hidden stats">
                     <div class="result-kicker">ARENA SONUCU</div>
                     <div class="result-title">ELENDİN</div>
@@ -509,7 +512,7 @@
             <div class="modal-body help-list">
                 <div class="help-item"><strong>🕹️ Hareket</strong>Joystick veya WASD ile yön ver.</div>
                 <div class="help-item"><strong>⚡ DASH</strong>Rakipleri kes, ama gövde uzunluğunu koru.</div>
-                <div class="help-item"><strong>🪙 Altın</strong>Yemleri topla, mağazadan kozmetik al.</div>
+                <div class="help-item"><strong><span class="coin-icon" aria-hidden="true"></span> Altın</strong>Yemleri topla, mağazadan kozmetik al.</div>
                 <div class="help-item"><strong>🔥 Combo</strong>Yemleri arka arkaya toplayarak bonusu yükselt.</div>
                 <div class="help-item"><strong>👑 Boss</strong>Candy Titan’a boost ile saldır.</div>
                 <div class="help-item"><strong>🏆 Hedef</strong>Skorunu, rankını ve koleksiyonunu büyüt.</div>
@@ -799,6 +802,7 @@
         
         const candyGeo = new THREE.IcosahedronGeometry(1.2, 0); // Yemler büyütüldü
         const donutGeo = new THREE.TorusGeometry(1.1, 0.5, 8, 16); // Yemler büyütüldü
+        const goldCoinGeo = new THREE.CylinderGeometry(1.05, 1.05, 0.28, 24);
         const magnetBoxGeo = new THREE.BoxGeometry(1.8, 1.8, 1.8);
 
         // Kral Tacı
@@ -910,8 +914,9 @@
                 if (type === 'normal' && !pos && Math.random() < 0.045) fType = 'gold';
 
                 if (fType === 'gold') {
-                    mesh = new THREE.Mesh(candyGeo, goldFoodMat);
+                    mesh = new THREE.Mesh(goldCoinGeo, goldFoodMat);
                     mesh.scale.setScalar(1.25);
+                    mesh.rotation.x = Math.PI / 2;
                     val = 25;
                 } else if (fType === 'magnet') {
                     mesh = new THREE.Mesh(magnetBoxGeo, magnetMat);
@@ -1102,7 +1107,7 @@
             if (!gain) return;
             playerStats.gold += gain;
             savePlayerStats();
-            if (position) createFloatingText(`+${gain} 🪙`, position, '#ffd166');
+            if (position) createFloatingText(`+${gain} ALTIN`, position, '#ffd166');
             playSfx('gold');
             updateWalletUI();
         }
@@ -1119,7 +1124,7 @@
             if (!item) return;
             if (!playerStats.unlockedSkins.includes(id)) {
                 if (playerStats.gold < item.price) {
-                    triggerViralBurst(new THREE.Vector3(), '🪙 Yeterli altın yok!', '#ff8a65');
+                    triggerViralBurst(new THREE.Vector3(), 'ALTIN YETERSİZ!', '#ff8a65');
                     return;
                 }
                 playerStats.gold -= item.price;
@@ -1135,7 +1140,7 @@
             if (!item) return;
             if (!playerStats.ownedAccessories.includes(id)) {
                 if (playerStats.gold < item.price) {
-                    triggerViralBurst(new THREE.Vector3(), '🪙 Yeterli altın yok!', '#ff8a65');
+                    triggerViralBurst(new THREE.Vector3(), 'ALTIN YETERSİZ!', '#ff8a65');
                     return;
                 }
                 playerStats.gold -= item.price;
@@ -1151,7 +1156,7 @@
             if (grid) {
                 grid.innerHTML = cosmetics.map(item => {
                     const owned = playerStats.unlockedSkins.includes(item.id);
-                    const label = playerStats.selectedSkin === item.id ? 'Kuşandı' : owned ? 'Giy' : `${item.price} 🪙`;
+                    const label = playerStats.selectedSkin === item.id ? 'Kuşandı' : owned ? 'Giy' : `${item.price} ALTIN`;
                     return `<button class="skin-card ${playerStats.selectedSkin === item.id ? 'selected' : ''} ${owned ? 'owned' : ''}" data-skin="${item.id}"><span class="skin-swatch" style="background:#${item.color.toString(16).padStart(6, '0')};color:#${item.glow.toString(16).padStart(6, '0')}" ></span>${item.name}<br><small>${label}</small></button>`;
                 }).join('');
                 grid.querySelectorAll('[data-skin]').forEach(button => button.addEventListener('click', () => {
@@ -1172,7 +1177,7 @@
             if (accessoryGrid) {
                 accessoryGrid.innerHTML = accessories.map(item => {
                     const owned = playerStats.ownedAccessories.includes(item.id);
-                    const label = playerStats.selectedAccessory === item.id ? 'Kuşandı' : owned ? 'Tak' : `${item.price} 🪙`;
+                    const label = playerStats.selectedAccessory === item.id ? 'Kuşandı' : owned ? 'Tak' : `${item.price} ALTIN`;
                     return `<button class="shop-card ${owned ? 'owned' : ''} ${playerStats.selectedAccessory === item.id ? 'equipped' : ''}" data-accessory="${item.id}"><span class="accessory-icon" style="color:#${(item.color || 0xffd166).toString(16).padStart(6, '0')}">${item.icon}</span>${item.name}<small>${label}</small></button>`;
                 }).join('');
                 accessoryGrid.querySelectorAll('[data-accessory]').forEach(button => button.addEventListener('click', () => buyOrEquipAccessory(button.dataset.accessory)));
@@ -2014,7 +2019,7 @@
             document.getElementById('final-combo').innerText = `x${playerStats.comboBest}`;
             document.getElementById('moment-card').classList.remove('hidden');
             document.getElementById('moment-title').textContent = `${playerStats.playerName} · ${playerSnake.score} SKOR`;
-            document.getElementById('moment-detail').textContent = `🪙 ${playerStats.gold} altın · 🔥 Combo x${playerStats.comboBest} · Lv ${playerStats.level}`;
+            document.getElementById('moment-detail').textContent = `${playerStats.gold} ALTIN · Combo x${playerStats.comboBest} · Lv ${playerStats.level}`;
             updateProfileUI();
             updateLobbyUI();
         }
