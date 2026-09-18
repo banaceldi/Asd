@@ -118,6 +118,10 @@
         .rank-strip { margin-top: 10px; display: flex; justify-content: space-between; align-items: center; color: #fff; background: linear-gradient(90deg, #172652, #4c2f78); border-radius: 13px; padding: 9px 11px; font-size: 11px; font-weight: 900; }
         .rank-strip strong { color: #ffd166; font-size: 16px; }
         .achievement-line { margin-top: 8px; color: #56647a; font-size: 10px; font-weight: 800; }
+        .mode-panel { margin-top: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .mode-btn { border: 1px solid rgba(38,65,116,.22); border-radius: 11px; padding: 8px 4px; background: rgba(255,255,255,.62); color: #44516a; font-size: 9px; font-weight: 900; cursor: pointer; }
+        .mode-btn.selected { color: #fff; border-color: #ff477e; background: linear-gradient(135deg, #ff477e, #7c5cff); box-shadow: 0 5px 15px rgba(124,92,255,.25); }
+        .mode-btn small { display: block; margin-top: 3px; opacity: .78; font-size: 8px; }
         .hidden { display: none !important; }
 
         @media (min-width: 768px) { #dash-btn { width: 110px; height: 110px; font-size: 22px; } .logo { font-size: 70px; } }
@@ -198,6 +202,11 @@
             </div>
             <div class="stats" style="margin-top:12px;">Seviye <span id="profile-level">1</span> · Toplam XP <span id="profile-xp">0</span></div>
             <div class="rank-strip"><span>SEZON RÜTBESİ<br><strong id="profile-rank">Bronz</strong></span><span id="profile-rating">100 RP</span></div>
+            <div class="mode-panel" id="mode-panel">
+                <button class="mode-btn selected" data-mode="classic">KLASİK<small>Serbest arena</small></button>
+                <button class="mode-btn" data-mode="boss">BOSS RUSH<small>Titan hemen gelir</small></button>
+                <button class="mode-btn" data-mode="time">TIME ATTACK<small>90 saniye</small></button>
+            </div>
             <div class="collection-panel">
                 <div class="collection-title"><span>Skin Koleksiyonu</span><span id="collection-count">1/8</span></div>
                 <div class="skin-grid" id="skin-grid"></div>
@@ -226,6 +235,7 @@
         playerStats.rating = Number(playerStats.rating || 100);
         playerStats.achievements = Array.isArray(playerStats.achievements) ? playerStats.achievements : [];
         playerStats.bestLength = Number(playerStats.bestLength || 0);
+        playerStats.selectedMode = playerStats.selectedMode || 'classic';
         const cosmetics = [
             { id: 'classic', name: 'Candy', color: 0xff477e, glow: 0xff8fab, level: 1 },
             { id: 'ocean', name: 'Ocean', color: 0x22d3ee, glow: 0x7ef9ff, level: 2 },
@@ -258,6 +268,7 @@
         let premiumTicker = 0;
         let arenaEventTimer = 18;
         let bossEvent = null;
+        let matchTimer = 0;
         const premiumUpgrades = [
             'Neon Glow', 'Boss Crown', 'Ultra Shadow', 'Combo Burst', 'Ghost Trail', 'Arena Pulse',
             'Magnet Bloom', 'Sky Spark', 'Cinematic Rush', 'Viral Mode'
@@ -645,6 +656,12 @@
             if (count) count.textContent = `${playerStats.unlockedSkins.length}/${cosmetics.length}`;
             if (achievement) achievement.textContent = playerStats.achievements.length ? `🏆 ${playerStats.achievements.length} başarı açıldı` : '🏆 İlk avını yap ve koleksiyonunu büyüt.';
             updateXPBar();
+        }
+
+        function updateModeUI() {
+            document.querySelectorAll('[data-mode]').forEach(button => {
+                button.classList.toggle('selected', button.dataset.mode === playerStats.selectedMode);
+            });
         }
 
         function unlockAchievement(id, label) {
@@ -1335,7 +1352,8 @@
             lastFoodTime = 0;
             viralMeter = 0;
             premiumTicker = 0;
-            arenaEventTimer = 18;
+            matchTimer = playerStats.selectedMode === 'time' ? 90 : 0;
+            arenaEventTimer = playerStats.selectedMode === 'boss' ? 3 : 18;
             if (bossEvent) {
                 scene.remove(bossEvent);
                 bossEvent = null;
@@ -1361,6 +1379,7 @@
             GAME_STATE = 'PLAYING';
             document.getElementById('menu-layer').classList.add('hidden');
             document.getElementById('ui-layer').classList.remove('hidden');
+            document.getElementById('feature-banner').textContent = playerStats.selectedMode === 'boss' ? 'BOSS RUSH ACTIVE' : playerStats.selectedMode === 'time' ? 'TIME ATTACK · 90s' : 'CLASSIC ARENA';
             
             playerSnake = new Snake(true, "Sen", new THREE.Vector3(0,0,0), 0xff477e);
             updatePlayerScore();
@@ -1375,7 +1394,13 @@
         }
 
         document.getElementById('start-btn').addEventListener('click', startGame);
+        document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => {
+            playerStats.selectedMode = button.dataset.mode;
+            savePlayerStats();
+            updateModeUI();
+        }));
         updateProfileUI();
+        updateModeUI();
 
         document.getElementById('challenge-btn').addEventListener('click', () => {
             if (playerSnake && !playerSnake.isDead) {
@@ -1417,6 +1442,15 @@
             }
 
             if (GAME_STATE === 'PLAYING') {
+                if (playerStats.selectedMode === 'time') {
+                    matchTimer = Math.max(0, matchTimer - delta);
+                    const banner = document.getElementById('feature-banner');
+                    if (banner) banner.textContent = `TIME ATTACK · ${Math.ceil(matchTimer)}s`;
+                    if (matchTimer <= 0 && playerSnake && !playerSnake.isDead) {
+                        triggerViralBurst(playerSnake.head.position, '⏱️ SÜRE BİTTİ!', '#ffd166');
+                        playerSnake.die('Zaman');
+                    }
+                }
                 snakes.forEach(s => s.update(delta, time));
                 arenaEventTimer -= delta;
                 if (arenaEventTimer <= 0) startBossEvent();
@@ -1559,6 +1593,8 @@
                         if (s1.head.position.distanceToSquared(f.mesh.position) < eatDist) {
                             const baseValue = f.mesh.userData.value;
                             let scoreGain = baseValue;
+                            if (s1.isPlayer && playerStats.selectedMode === 'boss') scoreGain = Math.floor(scoreGain * 1.25);
+                            if (s1.isPlayer && playerStats.selectedMode === 'time') scoreGain = Math.floor(scoreGain * 1.5);
                             if (s1.isPlayer && comboTicker > 1) {
                                 scoreGain += comboTicker * 4;
                             }
