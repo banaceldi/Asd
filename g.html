@@ -202,6 +202,12 @@
         .shop-card:disabled { cursor: not-allowed; opacity: .58; }
         .shop-card small { display: block; margin-top: 3px; font-size: 8px; color: #65738b; }
         .accessory-icon { display: block; height: 24px; color: #ffd166; font-size: 19px; line-height: 24px; }
+        .moment-card { margin-top: 10px; padding: 10px 12px; border-radius: 14px; color: #fff; background: linear-gradient(135deg, rgba(255,71,126,.92), rgba(20,121,209,.92)); border: 1px solid rgba(255,255,255,.65); box-shadow: 0 8px 22px rgba(20,121,209,.25); font-size: 11px; font-weight: 900; }
+        .moment-card strong { display: block; color: #ffd166; font-size: 15px; margin-bottom: 3px; }
+        .moment-card small { color: rgba(255,255,255,.82); font-size: 9px; }
+        .cinematic-label { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%) scale(.7); opacity: 0; pointer-events: none; z-index: 60; color: #fff; font-size: clamp(24px, 6vw, 58px); font-weight: 950; letter-spacing: .08em; text-align: center; text-shadow: 0 0 20px #ff477e, 0 8px 30px rgba(0,0,0,.5); white-space: nowrap; }
+        .cinematic-label.active { animation: killCinematic .8s cubic-bezier(.15,.8,.25,1) forwards; }
+        @keyframes killCinematic { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.7); } 22% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); } 100% { opacity: 0; transform: translate(-50%, -58%) scale(1); } }
         .mode-panel { margin-top: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .mode-btn { border: 1px solid rgba(38,65,116,.22); border-radius: 11px; padding: 8px 4px; background: rgba(255,255,255,.62); color: #44516a; font-size: 9px; font-weight: 900; cursor: pointer; }
         .mode-btn.selected { color: #fff; border-color: #ff477e; background: linear-gradient(135deg, #ff477e, #7c5cff); box-shadow: 0 5px 15px rgba(124,92,255,.25); }
@@ -227,6 +233,7 @@
         <div class="feature-banner" id="feature-banner">10 Premium Upgrades Active</div>
         <div class="feature-badges" id="feature-badges"></div>
         <div id="vignette"></div>
+        <div id="cinematic-label" class="cinematic-label">OUTPLAYED!</div>
         <div class="cinematic-flash" id="cinematic-flash"></div>
         <div class="boss-event hidden" id="boss-event">
             <strong>👑 CANDY TITAN EVENT</strong>
@@ -290,6 +297,7 @@
                     Son Skor: <span id="final-score">0</span><br>
                     En Yüksek: <span id="best-score">0</span>
                 </div>
+                <div id="moment-card" class="moment-card hidden"><strong id="moment-title">ARENA MOMENT</strong><span id="moment-detail">Skorunu paylaş ve liderliği göster.</span><br><small>Snake Rush · Season 01</small></div>
                 <label class="input-label" for="player-name">Oyuncu adı</label>
                 <input class="player-input" id="player-name" maxlength="16" autocomplete="nickname" placeholder="Arena adını yaz..." value="Oyuncu">
                 <div class="mode-panel" id="mode-panel">
@@ -396,6 +404,8 @@
         let arenaEventTimer = 18;
         let bossEvent = null;
         let matchTimer = 0;
+        let cinematicTimer = 0;
+        const cinematicFocus = new THREE.Vector3();
         const premiumUpgrades = [
             'Neon Glow', 'Boss Crown', 'Ultra Shadow', 'Combo Burst', 'Ghost Trail', 'Arena Pulse',
             'Magnet Bloom', 'Sky Spark', 'Cinematic Rush', 'Viral Mode'
@@ -442,6 +452,7 @@
         // Kamera Kurulumu - Oyuncunun etrafı rahat görmesi için uzağa ve yukarı çekildi
         const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 800);
         const cameraPositionTarget = new THREE.Vector3();
+        const cameraLookTarget = new THREE.Vector3();
         
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -520,6 +531,30 @@
         const borderLines = new THREE.LineSegments(borderEdges, borderMat);
         borderLines.position.y = 2;
         scene.add(borderLines);
+
+        const arenaLandmarks = [];
+        function createArenaLandmarks() {
+            const landmarkMat = new THREE.MeshStandardMaterial({ color: 0x7ef9ff, emissive: 0x1479d1, emissiveIntensity: 1.3, metalness: .55, roughness: .18 });
+            const accentMat = new THREE.MeshBasicMaterial({ color: 0xffd166, transparent: true, opacity: .8 });
+            const points = [
+                [-mapSize * .34, -mapSize * .34], [mapSize * .34, -mapSize * .34],
+                [-mapSize * .34, mapSize * .34], [mapSize * .34, mapSize * .34]
+            ];
+            points.forEach(([x, z]) => {
+                const group = new THREE.Group();
+                const pillar = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 3.2, 14, 8), landmarkMat.clone());
+                pillar.position.y = 7;
+                const ring = new THREE.Mesh(new THREE.TorusGeometry(5.2, .34, 10, 36), accentMat.clone());
+                ring.rotation.x = Math.PI / 2;
+                ring.position.y = 4;
+                group.add(pillar, ring);
+                group.position.set(x, 0, z);
+                group.userData.ring = ring;
+                scene.add(group);
+                arenaLandmarks.push(group);
+            });
+        }
+        createArenaLandmarks();
 
         const sparkleGeo = new THREE.BufferGeometry();
         const sparkleCount = 180;
@@ -764,6 +799,25 @@
 
         function triggerScreenShake(amount) {
             screenShake = Math.max(screenShake, amount);
+        }
+
+        function triggerKillCinematic(position, title = 'OUTPLAYED!') {
+            cinematicFocus.copy(position);
+            cinematicTimer = .55;
+            triggerScreenShake(7);
+            const label = document.getElementById('cinematic-label');
+            if (label) {
+                label.textContent = title;
+                label.classList.remove('active');
+                void label.offsetWidth;
+                label.classList.add('active');
+            }
+            const flash = document.getElementById('cinematic-flash');
+            if (flash) {
+                flash.classList.remove('active');
+                void flash.offsetWidth;
+                flash.classList.add('active');
+            }
         }
 
         function haptic(duration = 10) {
@@ -1016,6 +1070,7 @@
                 this.aiStuckTimer = 0;
                 this.aiLastTargetDistance = Infinity;
                 this.aiWanderAngle = this.moveAngle;
+                this.comboVisual = 1;
 
                 const matColor = new THREE.MeshPhysicalMaterial({
                     color: this.colorHex,
@@ -1357,6 +1412,11 @@
                 this.headGlow.material.opacity = this.shield > 0 ? 0.8 : 0.18 + Math.sin(time * 8 + this.id) * 0.08;
                 this.headAura.material.opacity = this.shield > 0 ? 0.55 : 0.22 + Math.sin(time * 10 + this.id) * 0.12;
                 this.headAura.rotation.z += 0.03;
+                if (this.isPlayer) {
+                    this.comboVisual += (1 + Math.min(1.4, comboTicker * .035) - this.comboVisual) * .08;
+                    this.headAura.scale.setScalar(this.comboVisual);
+                    this.headGlow.scale.setScalar(this.comboVisual);
+                }
                 if (this.accessory) {
                     this.accessory.rotation.y += this.accessory.userData.spin;
                     this.accessory.position.y = Math.sin(time * 3.5) * 0.08;
@@ -1684,6 +1744,9 @@
             document.getElementById('start-btn').innerText = 'TEKRAR OYNA';
             document.getElementById('final-score').innerText = playerSnake.score;
             document.getElementById('best-score').innerText = bestScore;
+            document.getElementById('moment-card').classList.remove('hidden');
+            document.getElementById('moment-title').textContent = `${playerStats.playerName} · ${playerSnake.score} SKOR`;
+            document.getElementById('moment-detail').textContent = `🪙 ${playerStats.gold} altın · 🔥 Combo x${playerStats.comboBest} · Lv ${playerStats.level}`;
             updateProfileUI();
             updateLobbyUI();
         }
@@ -1908,6 +1971,12 @@
             dirLight.position.z = Math.cos(time * 0.45) * 70 + 20;
             accentLight.position.y = 30 + Math.sin(time * 1.3) * 15;
             rimLight.position.x = -80 + Math.sin(time * 0.7) * 25;
+            arenaLandmarks.forEach((landmark, index) => {
+                landmark.rotation.y += .002 + index * .0004;
+                landmark.userData.ring.rotation.z += .018 + index * .002;
+                landmark.userData.ring.scale.setScalar(1 + Math.sin(time * 2.5 + index) * .08);
+            });
+            if (cinematicTimer > 0) cinematicTimer = Math.max(0, cinematicTimer - delta);
             if (GAME_STATE === 'PLAYING') {
                 if (time - lastPremiumUpdate > 4) {
                     lastPremiumUpdate = time;
@@ -1955,6 +2024,10 @@
                         killer.score += Math.floor(s1.score / 2) + 50;
                         if (killer.isPlayer) updatePlayerScore();
                         triggerScreenShake(6);
+                        if (killer.isPlayer || s1.isPlayer) {
+                            triggerKillCinematic(s1.head.position, killer.isPlayer ? 'OUTPLAYED!' : 'ELIMINATED');
+                            if (killer.isPlayer) addGold(8, s1.head.position);
+                        }
                         spawnParticleBurst(s1.head.position, s1.colorHex, 30, 3.5);
                         s1.die(killer.name);
                         snakes.splice(i, 1);
@@ -2044,9 +2117,13 @@
                     cameraPositionTarget.set(targetCamX, camHeight, targetCamZ);
                     camera.position.lerp(cameraPositionTarget, 0.1);
 
-                    const lookTarget = playerSnake.head.position.clone();
-                    lookTarget.z -= 15;
-                    camera.lookAt(lookTarget);
+                    cameraLookTarget.copy(cinematicTimer > 0 ? cinematicFocus : playerSnake.head.position);
+                    cameraLookTarget.z -= cinematicTimer > 0 ? 5 : 15;
+                    if (cinematicTimer > 0) {
+                        camera.fov += (64 - camera.fov) * .16;
+                        cameraPositionTarget.y -= 8;
+                    }
+                    camera.lookAt(cameraLookTarget);
                 }
             } else {
                 let target = new THREE.Vector3(0, 0, 0);
