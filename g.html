@@ -108,6 +108,16 @@
         .mission-strip { margin-top: 18px; padding: 10px 12px; border-radius: 16px; background: rgba(23,38,82,0.08); border: 1px solid rgba(38,65,116,0.18); text-align: left; }
         .mission-strip h4 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #4f5d7a; }
         .mission-strip .task { display: flex; justify-content: space-between; font-size: 13px; margin: 6px 0; color: #33506b; font-weight: 700; }
+        .collection-panel { margin-top: 12px; padding: 10px; border-radius: 16px; background: rgba(23,38,82,0.08); border: 1px solid rgba(38,65,116,0.18); text-align: left; }
+        .collection-title { display: flex; justify-content: space-between; color: #4f5d7a; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+        .skin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 8px; }
+        .skin-card { border: 2px solid rgba(255,255,255,.7); border-radius: 12px; padding: 7px 3px; background: rgba(255,255,255,.7); cursor: pointer; text-align: center; font-size: 9px; font-weight: 900; color: #44516a; }
+        .skin-card.selected { border-color: #ff477e; box-shadow: 0 0 0 2px rgba(255,71,126,.18), 0 5px 14px rgba(255,71,126,.22); }
+        .skin-card.locked { filter: grayscale(1); opacity: .5; cursor: not-allowed; }
+        .skin-swatch { display: block; width: 25px; height: 25px; margin: 0 auto 4px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 12px currentColor; }
+        .rank-strip { margin-top: 10px; display: flex; justify-content: space-between; align-items: center; color: #fff; background: linear-gradient(90deg, #172652, #4c2f78); border-radius: 13px; padding: 9px 11px; font-size: 11px; font-weight: 900; }
+        .rank-strip strong { color: #ffd166; font-size: 16px; }
+        .achievement-line { margin-top: 8px; color: #56647a; font-size: 10px; font-weight: 800; }
         .hidden { display: none !important; }
 
         @media (min-width: 768px) { #dash-btn { width: 110px; height: 110px; font-size: 22px; } .logo { font-size: 70px; } }
@@ -187,6 +197,12 @@
                 <div class="task"><span>🔥 Combo x5</span><span id="task-3">0/5</span></div>
             </div>
             <div class="stats" style="margin-top:12px;">Seviye <span id="profile-level">1</span> · Toplam XP <span id="profile-xp">0</span></div>
+            <div class="rank-strip"><span>SEZON RÜTBESİ<br><strong id="profile-rank">Bronz</strong></span><span id="profile-rating">100 RP</span></div>
+            <div class="collection-panel">
+                <div class="collection-title"><span>Skin Koleksiyonu</span><span id="collection-count">1/8</span></div>
+                <div class="skin-grid" id="skin-grid"></div>
+                <div class="achievement-line" id="achievement-line">🏆 İlk avını yap ve koleksiyonunu büyüt.</div>
+            </div>
             <div class="quick-row">
                 <button class="mini-btn" id="challenge-btn">HEDEFİ GÖR</button>
                 <button class="mini-btn alt" id="share-btn">PAYLAŞ</button>
@@ -205,6 +221,21 @@
         playerStats.xp = Number(playerStats.xp || 0);
         playerStats.level = Number(playerStats.level || 1);
         playerStats.levelUps = Number(playerStats.levelUps || 0);
+        playerStats.selectedSkin = playerStats.selectedSkin || 'classic';
+        playerStats.unlockedSkins = Array.isArray(playerStats.unlockedSkins) ? playerStats.unlockedSkins : ['classic'];
+        playerStats.rating = Number(playerStats.rating || 100);
+        playerStats.achievements = Array.isArray(playerStats.achievements) ? playerStats.achievements : [];
+        playerStats.bestLength = Number(playerStats.bestLength || 0);
+        const cosmetics = [
+            { id: 'classic', name: 'Candy', color: 0xff477e, glow: 0xff8fab, level: 1 },
+            { id: 'ocean', name: 'Ocean', color: 0x22d3ee, glow: 0x7ef9ff, level: 2 },
+            { id: 'royal', name: 'Royal', color: 0x8b5cf6, glow: 0xc4b5fd, level: 4 },
+            { id: 'sunset', name: 'Sunset', color: 0xff8a65, glow: 0xffd166, level: 6 },
+            { id: 'toxic', name: 'Toxic', color: 0x84cc16, glow: 0xd9f99d, level: 8 },
+            { id: 'cosmic', name: 'Cosmic', color: 0x2563eb, glow: 0xa78bfa, level: 10 },
+            { id: 'gold', name: 'Gold', color: 0xf59e0b, glow: 0xfff3a3, level: 15 },
+            { id: 'titan', name: 'Titan', color: 0xef4444, glow: 0xffd166, level: 20 }
+        ];
         let challengeProgress = {
             scoreTarget: 300,
             dashTarget: 3,
@@ -585,6 +616,46 @@
             }
         }
 
+        function getCurrentCosmetic() {
+            return cosmetics.find(item => item.id === playerStats.selectedSkin) || cosmetics[0];
+        }
+
+        function updateProfileUI() {
+            const grid = document.getElementById('skin-grid');
+            if (grid) {
+                grid.innerHTML = cosmetics.map(item => {
+                    const unlocked = playerStats.level >= item.level || playerStats.unlockedSkins.includes(item.id);
+                    if (unlocked && !playerStats.unlockedSkins.includes(item.id)) playerStats.unlockedSkins.push(item.id);
+                    return `<button class="skin-card ${playerStats.selectedSkin === item.id ? 'selected' : ''} ${unlocked ? '' : 'locked'}" data-skin="${item.id}" ${unlocked ? '' : 'disabled'}><span class="skin-swatch" style="background:#${item.color.toString(16).padStart(6, '0')};color:#${item.glow.toString(16).padStart(6, '0')}"></span>${item.name}<br><small>${unlocked ? 'Açık' : `Lv ${item.level}`}</small></button>`;
+                }).join('');
+                grid.querySelectorAll('[data-skin]').forEach(button => button.addEventListener('click', () => {
+                    playerStats.selectedSkin = button.dataset.skin;
+                    savePlayerStats();
+                    updateProfileUI();
+                }));
+            }
+            const rankNames = ['Bronz', 'Gümüş', 'Altın', 'Elmas', 'Titan'];
+            const rankIndex = Math.min(rankNames.length - 1, Math.floor(playerStats.rating / 250));
+            const rank = document.getElementById('profile-rank');
+            const rating = document.getElementById('profile-rating');
+            const count = document.getElementById('collection-count');
+            const achievement = document.getElementById('achievement-line');
+            if (rank) rank.textContent = rankNames[rankIndex];
+            if (rating) rating.textContent = `${playerStats.rating} RP`;
+            if (count) count.textContent = `${playerStats.unlockedSkins.length}/${cosmetics.length}`;
+            if (achievement) achievement.textContent = playerStats.achievements.length ? `🏆 ${playerStats.achievements.length} başarı açıldı` : '🏆 İlk avını yap ve koleksiyonunu büyüt.';
+            updateXPBar();
+        }
+
+        function unlockAchievement(id, label) {
+            if (playerStats.achievements.includes(id)) return;
+            playerStats.achievements.push(id);
+            addXP(30, 'Başarım');
+            savePlayerStats();
+            triggerViralBurst(playerSnake ? playerSnake.head.position : new THREE.Vector3(), `🏆 ${label}`, '#ffd166');
+            updateProfileUI();
+        }
+
         function updateViralMeter() {
             const fill = document.getElementById('viral-fill');
             const label = document.getElementById('viral-label');
@@ -615,7 +686,9 @@
                 this.id = snakeIdCounter++;
                 this.isPlayer = isPlayer;
                 this.name = name;
-                this.colorHex = colorHex;
+                const cosmetic = isPlayer ? getCurrentCosmetic() : null;
+                this.colorHex = cosmetic ? cosmetic.color : colorHex;
+                const glowColor = cosmetic ? cosmetic.glow : colorHex;
                 this.isDead = false;
                 
                 this.score = isPlayer ? 0 : Math.floor(Math.random() * 300) + 50;
@@ -630,15 +703,15 @@
                 this.boostDepleteTimer = 0;
 
                 const matColor = new THREE.MeshPhysicalMaterial({
-                    color: colorHex,
-                    emissive: colorHex,
+                    color: this.colorHex,
+                    emissive: this.colorHex,
                     emissiveIntensity: 1.1,
                     roughness: 0.2,
                     metalness: 0.45,
                     clearcoat: 1,
                     clearcoatRoughness: 0.08,
                     sheen: 0.9,
-                    sheenColor: new THREE.Color(colorHex)
+                    sheenColor: new THREE.Color(this.colorHex)
                 });
                 this.matColor = matColor;
 
@@ -653,20 +726,20 @@
 
                 this.headGlow = new THREE.Mesh(
                     new THREE.SphereGeometry(2.6, 24, 24),
-                    new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.2 })
+                    new THREE.MeshBasicMaterial({ color: glowColor, transparent: true, opacity: 0.2 })
                 );
                 this.head.add(this.headGlow);
 
                 this.headAura = new THREE.Mesh(
                     new THREE.TorusGeometry(2.8, 0.2, 12, 48),
-                    new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.35, side: THREE.DoubleSide })
+                    new THREE.MeshBasicMaterial({ color: glowColor, transparent: true, opacity: 0.35, side: THREE.DoubleSide })
                 );
                 this.headAura.rotation.x = Math.PI / 2;
                 this.headAura.position.y = -0.35;
                 this.head.add(this.headAura);
 
                 this.trailCooldown = 0;
-                this.trailColor = colorHex;
+                this.trailColor = glowColor;
 
                 const eyeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.35 });
                 const pupilMat = new THREE.MeshBasicMaterial({ color: 0x151515 });
@@ -1216,6 +1289,14 @@
 
         function gameOver() {
             playerStats.games += 1;
+            playerStats.rating = Math.max(0, playerStats.rating + (playerSnake && playerSnake.score >= 300 ? 18 : -4));
+            if (playerSnake && playerSnake.score >= 300) unlockAchievement('score300', 'Skor Ustası');
+            if ((playerStats.comboBest || 0) >= 5) unlockAchievement('combo5', 'Combo Avcısı');
+            if ((playerStats.dashCount || 0) >= 10) unlockAchievement('dash10', 'Dash Pilotu');
+            if (playerSnake && playerSnake.parts.length > playerStats.bestLength) {
+                playerStats.bestLength = playerSnake.parts.length;
+                unlockAchievement('longest', 'En Uzun Yılan');
+            }
             addXP(Math.max(10, Math.floor((playerSnake ? playerSnake.score : 0) / 25)), 'Maç sonucu');
             if (playerSnake && playerSnake.score > bestScore) {
                 bestScore = playerSnake.score;
@@ -1229,6 +1310,7 @@
             document.getElementById('start-btn').innerText = 'TEKRAR OYNA';
             document.getElementById('final-score').innerText = playerSnake.score;
             document.getElementById('best-score').innerText = bestScore;
+            updateProfileUI();
         }
 
         function applyPowerUpEffect(type) {
@@ -1293,6 +1375,7 @@
         }
 
         document.getElementById('start-btn').addEventListener('click', startGame);
+        updateProfileUI();
 
         document.getElementById('challenge-btn').addEventListener('click', () => {
             if (playerSnake && !playerSnake.isDead) {
