@@ -183,6 +183,15 @@
         .rank-strip { margin-top: 10px; display: flex; justify-content: space-between; align-items: center; color: #fff; background: linear-gradient(90deg, #172652, #4c2f78); border-radius: 13px; padding: 9px 11px; font-size: 11px; font-weight: 900; }
         .rank-strip strong { color: #ffd166; font-size: 16px; }
         .achievement-line { margin-top: 8px; color: #56647a; font-size: 10px; font-weight: 800; }
+        .floor-panel { margin-top: 12px; padding: 10px; border-radius: 16px; background: rgba(23,38,82,0.08); border: 1px solid rgba(38,65,116,0.18); }
+        .floor-title { display: flex; justify-content: space-between; color: #4f5d7a; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+        .floor-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 8px; }
+        .floor-card { border: 2px solid rgba(255,255,255,.7); border-radius: 12px; padding: 5px; background: rgba(255,255,255,.7); cursor: pointer; text-align: center; font-size: 9px; font-weight: 900; color: #44516a; }
+        .floor-card.selected { border-color: #1479d1; box-shadow: 0 0 0 2px rgba(20,121,209,.16), 0 5px 14px rgba(20,121,209,.22); }
+        .floor-preview { display: block; height: 34px; margin-bottom: 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,.8); }
+        .floor-preview.ocean { background-color: #1769aa; background-image: linear-gradient(rgba(255,255,255,.86) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.86) 1px, transparent 1px); background-size: 12px 12px; }
+        .floor-preview.ice { background-color: #2b9ed8; background-image: linear-gradient(rgba(255,255,255,.92) 2px, transparent 2px), linear-gradient(90deg, rgba(255,255,255,.92) 2px, transparent 2px); background-size: 17px 17px; }
+        .floor-preview.deep { background-color: #123f78; background-image: linear-gradient(rgba(255,255,255,.72) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.72) 1px, transparent 1px); background-size: 9px 9px; }
         .mode-panel { margin-top: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .mode-btn { border: 1px solid rgba(38,65,116,.22); border-radius: 11px; padding: 8px 4px; background: rgba(255,255,255,.62); color: #44516a; font-size: 9px; font-weight: 900; cursor: pointer; }
         .mode-btn.selected { color: #fff; border-color: #ff477e; background: linear-gradient(135deg, #ff477e, #7c5cff); box-shadow: 0 5px 15px rgba(124,92,255,.25); }
@@ -281,6 +290,10 @@
                     <div class="skin-grid" id="skin-grid"></div>
                     <div class="achievement-line" id="achievement-line">🏆 İlk avını yap ve koleksiyonunu büyüt.</div>
                 </div>
+                <div class="floor-panel">
+                    <div class="floor-title"><span>Zemin görünümü</span><span id="floor-count">Mavi grid</span></div>
+                    <div class="floor-grid" id="floor-grid"></div>
+                </div>
                 <div class="mission-strip">
                     <h4>Bugünün hedefleri</h4>
                     <div class="task"><span>💎 300 Skor</span><span id="task-1">0/300</span></div>
@@ -314,6 +327,12 @@
         playerStats.bestLength = Number(playerStats.bestLength || 0);
         playerStats.selectedMode = playerStats.selectedMode || 'classic';
         playerStats.playerName = String(playerStats.playerName || 'Oyuncu').slice(0, 16);
+        playerStats.selectedFloor = playerStats.selectedFloor || 'ocean';
+        const floorStyles = [
+            { id: 'ocean', name: 'Mavi grid', preview: 'ocean', ground: 0x1769aa, line: 0xffffff, opacity: 0.86, divisions: 60 },
+            { id: 'ice', name: 'Buz grid', preview: 'ice', ground: 0x2b9ed8, line: 0xffffff, opacity: 0.92, divisions: 46 },
+            { id: 'deep', name: 'Derin grid', preview: 'deep', ground: 0x123f78, line: 0xffffff, opacity: 0.72, divisions: 78 }
+        ];
         const cosmetics = [
             { id: 'classic', name: 'Candy', color: 0xff477e, glow: 0xff8fab, level: 1 },
             { id: 'ocean', name: 'Ocean', color: 0x22d3ee, glow: 0x7ef9ff, level: 2 },
@@ -454,6 +473,17 @@
         gridHelper.material.transparent = true;
         gridHelper.material.opacity = 0.3;
         scene.add(gridHelper);
+
+        function applyFloorStyle() {
+            const style = floorStyles.find(item => item.id === playerStats.selectedFloor) || floorStyles[0];
+            ground.material.color.setHex(style.ground);
+            gridHelper.geometry.dispose();
+            gridHelper.geometry = new THREE.GridHelper(mapSize, style.divisions, style.line, style.line).geometry;
+            gridHelper.material.color.setHex(style.line);
+            gridHelper.material.opacity = style.opacity;
+            glowRing.material.color.setHex(style.ground);
+            groundAura.material.color.setHex(style.ground);
+        }
 
         const borderGeo = new THREE.BoxGeometry(mapSize, 4, mapSize);
         const borderEdges = new THREE.EdgesGeometry(borderGeo);
@@ -780,6 +810,19 @@
             if (rating) rating.textContent = `${playerStats.rating} RP`;
             if (count) count.textContent = `${playerStats.unlockedSkins.length}/${cosmetics.length}`;
             if (achievement) achievement.textContent = playerStats.achievements.length ? `🏆 ${playerStats.achievements.length} başarı açıldı` : '🏆 İlk avını yap ve koleksiyonunu büyüt.';
+            const floorGrid = document.getElementById('floor-grid');
+            if (floorGrid) {
+                floorGrid.innerHTML = floorStyles.map(style => `<button class="floor-card ${playerStats.selectedFloor === style.id ? 'selected' : ''}" data-floor="${style.id}"><span class="floor-preview ${style.preview}"></span>${style.name}</button>`).join('');
+                floorGrid.querySelectorAll('[data-floor]').forEach(button => button.addEventListener('click', () => {
+                    playerStats.selectedFloor = button.dataset.floor;
+                    savePlayerStats();
+                    applyFloorStyle();
+                    updateProfileUI();
+                }));
+            }
+            const floorCount = document.getElementById('floor-count');
+            const selectedFloor = floorStyles.find(style => style.id === playerStats.selectedFloor) || floorStyles[0];
+            if (floorCount) floorCount.textContent = selectedFloor.name;
             updateXPBar();
         }
 
@@ -1606,6 +1649,7 @@
         updateProfileUI();
         updateModeUI();
         updateLobbyUI();
+        applyFloorStyle();
 
         document.getElementById('challenge-btn').addEventListener('click', () => {
             if (playerSnake && !playerSnake.isDead) {
@@ -1719,8 +1763,8 @@
                 const theme = themes[currentTheme];
                 scene.background.set(theme.sky);
                 scene.fog.color.set(theme.fog);
-                ground.material.color.set(theme.ground);
                 borderMat.color.set(theme.accent);
+                applyFloorStyle();
             }
 
             if (time - lastSparklePulse > 0.05) {
