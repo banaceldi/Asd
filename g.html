@@ -7,45 +7,89 @@
     <style>
         :root { --accent: #ff477e; --bg: #87CEEB; --ui-bg: rgba(255, 255, 255, 0.85); }
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
-        body { margin: 0; overflow: hidden; background-color: var(--bg); font-family: 'Segoe UI', system-ui, sans-serif; touch-action: none; overscroll-behavior: none; }
-        canvas { display: block; width: 100vw; height: 100vh; }
+        html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; }
+        body { background: radial-gradient(circle at top, #dff7ff 0%, #99d9ff 18%, #75c9ff 32%, #4fa8ff 60%, #2b7ae9 100%); font-family: 'Segoe UI', system-ui, sans-serif; touch-action: none; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+        canvas { display: block; position: fixed; inset: 0; width: 100vw; height: 100vh; filter: saturate(1.2) contrast(1.05); }
         
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; padding: 15px; }
-        .top-bar { display: flex; justify-content: space-between; align-items: flex-start; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
+        .top-bar { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
         .left-hud { display: flex; flex-direction: column; gap: 10px; }
-        .score-box { background: var(--ui-bg); padding: 10px 20px; border-radius: 20px; border: 3px solid var(--accent); color: #333; font-size: 24px; font-weight: 900; box-shadow: 0 4px 15px rgba(255, 71, 126, 0.3); backdrop-filter: blur(5px); }
+        .score-box { background: rgba(255,255,255,0.18); border: 2px solid rgba(255,255,255,0.8); color: #ffffff; font-size: 24px; font-weight: 900; box-shadow: 0 8px 25px rgba(8, 43, 89, 0.35), inset 0 1px 0 rgba(255,255,255,0.6); backdrop-filter: blur(10px); border-radius: 18px; padding: 10px 20px; text-shadow: 0 2px 10px rgba(0,0,0,0.15); }
         
-        #magnet-timer { display: none; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: white; padding: 8px 15px; border-radius: 15px; font-weight: bold; font-size: 16px; border: 2px solid white; box-shadow: 0 0 15px rgba(0, 242, 254, 0.6); animation: pulse 1s infinite; }
+        #magnet-timer { display: none; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: white; padding: 8px 15px; border-radius: 15px; font-weight: 800; font-size: 16px; border: 2px solid rgba(255,255,255,0.9); box-shadow: 0 0 15px rgba(0, 242, 254, 0.8); animation: pulse 1s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
         #kill-feed { position: absolute; top: 190px; right: 15px; display: flex; flex-direction: column; gap: 5px; pointer-events: none; z-index: 50; }
-        .kill-msg { background: rgba(0,0,0,0.6); color: white; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; animation: slideIn 0.3s ease-out forwards; display: flex; align-items: center; gap: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .kill-msg span { padding: 2px 6px; border-radius: 4px; }
+        .kill-msg { background: rgba(10,15,30,0.72); color: white; padding: 7px 12px; border-radius: 12px; font-size: 13px; font-weight: 800; animation: slideIn 0.35s ease-out forwards; display: flex; align-items: center; gap: 8px; box-shadow: 0 10px 22px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.12); }
+        .kill-msg span { padding: 2px 6px; border-radius: 5px; }
         @keyframes slideIn { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        .leaderboard { background: var(--ui-bg); padding: 15px; border-radius: 15px; border: 3px solid var(--accent); color: #333; backdrop-filter: blur(5px); display: flex; flex-direction: column; gap: 6px; width: 190px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .lb-title { font-size: 14px; text-transform: uppercase; color: #888; font-weight: 900; border-bottom: 2px solid #ddd; padding-bottom: 5px; margin-bottom: 5px; text-align: center; }
-        .lb-item { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; align-items: center; }
-        .lb-item.me { color: var(--accent); font-weight: 900; background: rgba(255, 71, 126, 0.15); padding: 4px; border-radius: 6px; }
-        .color-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; border: 1px solid #aaa;}
+        .leaderboard { background: rgba(255,255,255,0.18); padding: 15px; border-radius: 18px; border: 2px solid rgba(255,255,255,0.8); color: #fff; backdrop-filter: blur(12px); display: flex; flex-direction: column; gap: 6px; width: 195px; box-shadow: 0 10px 24px rgba(7, 19, 35, 0.25); }
+        .lb-title { font-size: 14px; text-transform: uppercase; color: rgba(255,255,255,0.85); font-weight: 900; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 5px; margin-bottom: 5px; text-align: center; letter-spacing: 0.06em; }
+        .lb-item { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; align-items: center; color: rgba(255,255,255,0.92); }
+        .lb-item.me { color: #ffe4ef; font-weight: 900; background: rgba(255, 71, 126, 0.18); padding: 5px 7px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); }
+        .color-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 0 12px currentColor; }
+
+        .quest-panel { background: rgba(255,255,255,0.18); border: 2px solid rgba(255,255,255,0.8); border-radius: 18px; padding: 10px 12px; color: white; box-shadow: 0 10px 24px rgba(7, 19, 35, 0.18); backdrop-filter: blur(12px); margin-top: 12px; width: 220px; }
+        .quest-panel h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,.8); }
+        .mission-item { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; margin: 6px 0; color: rgba(255,255,255,.9); }
+        .mission-item strong { color: #ffe082; }
+        .mission-item .progress { color: #9ef0ff; }
+
+        .xp-bar-wrap { margin-top: 12px; width: 220px; background: rgba(11,18,39,0.22); border: 1px solid rgba(255,255,255,0.4); border-radius: 999px; overflow: hidden; }
+        .xp-bar { height: 12px; width: 0%; background: linear-gradient(90deg, #7ef9ff, #59d4ff, #ffcf5c); box-shadow: 0 0 18px rgba(126,249,255,0.7); transition: width 0.25s ease; }
+
+        .powerup-strip { display: flex; gap: 8px; margin-top: 12px; }
+        .powerup-chip { flex: 1; min-width: 70px; padding: 8px 7px; border-radius: 12px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.6); color: white; font-weight: 800; text-align: center; box-shadow: inset 0 1px 0 rgba(255,255,255,0.2); }
+        .powerup-chip.shield { background: linear-gradient(135deg, rgba(124, 92, 255, 0.75), rgba(59, 130, 246, 0.7)); }
+        .powerup-chip.pulse { background: linear-gradient(135deg, rgba(252, 211, 77, 0.82), rgba(249, 115, 22, 0.72)); }
+        .powerup-chip.magnet { background: linear-gradient(135deg, rgba(34, 211, 238, 0.8), rgba(59, 130, 246, 0.75)); }
+
+        .combo-hud { position: absolute; left: 50%; top: 18px; transform: translateX(-50%); background: rgba(18, 24, 52, 0.72); border: 2px solid rgba(255,255,255,0.5); border-radius: 999px; padding: 8px 18px; color: white; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; box-shadow: 0 0 22px rgba(63, 152, 255, 0.35); z-index: 11; display: none; }
+        .combo-hud.show { display: block; animation: comboPulse 0.5s ease; }
+        @keyframes comboPulse { 0% { transform: translateX(-50%) scale(.8); opacity: .5; } 50% { transform: translateX(-50%) scale(1.06); opacity: 1; } 100% { transform: translateX(-50%) scale(1); opacity: 1; } }
         
-        .controls { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: 10px; pointer-events: auto; }
-        #joystick-zone { width: 140px; height: 140px; background: rgba(255, 255, 255, 0.4); border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.8); display: flex; justify-content: center; align-items: center; position: relative; backdrop-filter: blur(5px); }
-        #joystick-knob { width: 60px; height: 60px; background: linear-gradient(135deg, #ff8fab, #ff477e); border-radius: 50%; box-shadow: 0 0 15px rgba(255, 71, 126, 0.5); pointer-events: none; position: absolute; transform: translate(0, 0); transition: background 0.2s;}
+        .controls { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: max(10px, env(safe-area-inset-bottom)); pointer-events: auto; gap: 16px; }
+        #joystick-zone { width: min(150px, 32vw); height: min(150px, 32vw); max-width: 150px; max-height: 150px; background: rgba(255,255,255,0.18); border-radius: 50%; border: 3px solid rgba(255,255,255,0.9); display: flex; justify-content: center; align-items: center; position: relative; backdrop-filter: blur(10px); box-shadow: inset 0 0 22px rgba(255,255,255,0.18), 0 12px 25px rgba(11, 29, 68, 0.16); touch-action: none; }
+        #joystick-knob { width: 36%; height: 36%; background: linear-gradient(135deg, #ff8fab, #ff477e); border-radius: 50%; box-shadow: 0 0 18px rgba(255, 71, 126, 0.8), inset 0 2px 8px rgba(255,255,255,0.4); pointer-events: none; position: absolute; transform: translate(0, 0); transition: background 0.2s; }
         
-        #dash-btn { width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, #ffd3b6, #ffaaa5); border: 3px solid white; color: #d63c6b; font-weight: 900; font-size: 18px; box-shadow: 0 0 20px rgba(255, 170, 165, 0.8); display: flex; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.1s; }
-        #dash-btn:active, #dash-btn.active-dash { transform: scale(0.85); background: linear-gradient(135deg, #ffaaa5, #ff8b94); box-shadow: 0 0 30px rgba(255, 139, 148, 1); }
+        #dash-btn { width: min(110px, 23vw); height: min(110px, 23vw); max-width: 110px; max-height: 110px; border-radius: 50%; background: linear-gradient(135deg, #ffd86b, #ffb347 35%, #ff8a65 100%); border: 3px solid rgba(255,255,255,0.9); color: #fff; font-weight: 900; font-size: clamp(14px, 2.2vw, 22px); box-shadow: 0 0 25px rgba(255, 165, 77, 0.8), inset 0 2px 8px rgba(255,255,255,0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.1s ease, box-shadow 0.2s ease; touch-action: manipulation; }
+        #dash-btn:active, #dash-btn.active-dash { transform: scale(0.85); background: linear-gradient(135deg, #ffb347, #ff7b54); box-shadow: 0 0 30px rgba(255, 127, 80, 1), inset 0 2px 8px rgba(255,255,255,0.5); }
+
+        @media (orientation: portrait) {
+            #ui-layer { padding-top: max(18px, env(safe-area-inset-top)); }
+            .top-bar { flex-direction: column; align-items: flex-start; }
+            .leaderboard { width: min(190px, 52vw); }
+            .quest-panel, .xp-bar-wrap { width: min(220px, 55vw); }
+            .controls { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+        }
+
+        @media (orientation: landscape) and (max-height: 520px) {
+            .leaderboard { width: 150px; padding: 10px; }
+            .quest-panel { width: 170px; padding: 8px 10px; }
+            .xp-bar-wrap { width: 170px; }
+            .powerup-strip { margin-top: 8px; }
+            .powerup-chip { min-width: 54px; font-size: 11px; padding: 6px 4px; }
+            #joystick-zone { width: 110px; height: 110px; }
+            #dash-btn { width: 86px; height: 86px; }
+        }
 
         .floating-text { position: absolute; font-weight: 900; font-size: 26px; -webkit-text-stroke: 1px #fff; pointer-events: none; transform: translate(-50%, -50%); animation: floatUp 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards; z-index: 5; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
         @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1.5); } }
 
         #menu-layer { position: absolute; top:0; left:0; width: 100%; height: 100%; background: transparent; z-index: 50; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .menu-card { background: rgba(255,255,255,0.95); padding: 30px; border-radius: 30px; border: 4px solid #ff477e; box-shadow: 0 15px 40px rgba(0,0,0,0.2); text-align: center; max-width: 400px; width: 90%; backdrop-filter: blur(10px); }
-        .logo { font-size: 55px; font-weight: 900; color: white; -webkit-text-stroke: 2px #ff477e; text-shadow: 0 8px 20px rgba(255, 71, 126, 0.5); margin-bottom: 5px; text-align: center; line-height: 1.1; font-family: 'Comic Sans MS', cursive, sans-serif; }
-        .play-btn { background: #ff477e; color: white; border: none; padding: 15px 40px; font-size: 24px; font-weight: 900; border-radius: 30px; cursor: pointer; box-shadow: 0 8px 20px rgba(255, 71, 126, 0.4); transition: all 0.2s; margin-top: 15px; width: 100%; }
-        .play-btn:hover { transform: scale(1.05); }
-        .stats { color: #555; margin-top: 15px; font-size: 16px; font-weight: 600; background: #f9f9f9; padding: 10px; border-radius: 15px; border: 2px dashed #ddd; }
+        .menu-card { background: linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.94)); padding: 30px; border-radius: 30px; border: 4px solid rgba(255,71,126,0.8); box-shadow: 0 20px 50px rgba(12, 38, 78, 0.32), 0 0 0 6px rgba(255,255,255,0.14); text-align: center; max-width: 420px; width: 90%; backdrop-filter: blur(12px); }
+        .logo { font-size: 55px; font-weight: 900; color: rgba(255,255,255,0.94); -webkit-text-stroke: 2px #ff477e; text-shadow: 0 10px 24px rgba(255, 71, 126, 0.5), 0 0 18px rgba(255,255,255,0.9); margin-bottom: 5px; text-align: center; line-height: 1.08; font-family: 'Comic Sans MS', cursive, sans-serif; }
+        .play-btn { background: linear-gradient(135deg, #ff5f96, #ff477e 50%, #ff2d7d 100%); color: white; border: none; padding: 15px 40px; font-size: 24px; font-weight: 900; border-radius: 30px; cursor: pointer; box-shadow: 0 10px 30px rgba(255, 71, 126, 0.45), inset 0 2px 8px rgba(255,255,255,0.2); transition: transform 0.2s ease, box-shadow 0.2s ease; margin-top: 15px; width: 100%; }
+        .play-btn:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 16px 35px rgba(255, 71, 126, 0.6); }
+        .stats { color: #48556a; margin-top: 15px; font-size: 16px; font-weight: 700; background: linear-gradient(180deg, #ffffff, #f6f7ff); padding: 12px; border-radius: 15px; border: 2px dashed rgba(255,71,126,0.32); box-shadow: inset 0 1px 0 rgba(255,255,255,0.8); }
         .stats span { color: #ff477e; font-weight: 900; font-size: 22px; }
+        .quick-row { display: flex; gap: 10px; margin-top: 16px; }
+        .mini-btn { flex: 1; border: none; background: linear-gradient(135deg, #43c6ac, #4facfe); color: white; border-radius: 14px; padding: 12px 10px; font-weight: 900; cursor: pointer; box-shadow: 0 8px 18px rgba(79,172,254,0.35); }
+        .mini-btn.alt { background: linear-gradient(135deg, #ff9966, #ff5e62); box-shadow: 0 8px 18px rgba(255,94,98,0.35); }
+        .mission-strip { margin-top: 18px; padding: 10px 12px; border-radius: 16px; background: rgba(23,38,82,0.08); border: 1px solid rgba(38,65,116,0.18); text-align: left; }
+        .mission-strip h4 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #4f5d7a; }
+        .mission-strip .task { display: flex; justify-content: space-between; font-size: 13px; margin: 6px 0; color: #33506b; font-weight: 700; }
         .hidden { display: none !important; }
 
         @media (min-width: 768px) { #dash-btn { width: 110px; height: 110px; font-size: 22px; } .logo { font-size: 70px; } }
@@ -69,11 +113,26 @@
                 <div id="magnet-timer">🧲 Mıknatıs: 10s</div>
             </div>
             <div id="kill-feed"></div>
-            <div class="leaderboard" id="leaderboard-container">
-                <div class="lb-title">Top 5 Kral 👑</div>
-                <div id="lb-list"></div>
+            <div>
+                <div class="leaderboard" id="leaderboard-container">
+                    <div class="lb-title">Top 5 Kral 👑</div>
+                    <div id="lb-list"></div>
+                </div>
+                <div class="quest-panel">
+                    <h3>Günlük Hedef</h3>
+                    <div id="mission-list"></div>
+                </div>
+                <div class="xp-bar-wrap">
+                    <div id="xp-bar" class="xp-bar"></div>
+                </div>
+                <div class="powerup-strip">
+                    <div class="powerup-chip shield">🛡️ Shield</div>
+                    <div class="powerup-chip pulse">⚡ Pulse</div>
+                    <div class="powerup-chip magnet">🧲 Magnet</div>
+                </div>
             </div>
         </div>
+        <div id="combo-hud" class="combo-hud">Combo x1</div>
         <div class="controls">
             <div id="joystick-zone"><div id="joystick-knob"></div></div>
             <button id="dash-btn">⚡ DASH</button>
@@ -84,13 +143,23 @@
     <div id="menu-layer">
         <div class="menu-card">
             <div class="logo">SNAKE.IO 3D<br><span style="font-size: 30px; color:#ffcc5c; -webkit-text-stroke: 1px #d49a2a;">CANDY RUSH</span></div>
-            <p style="color:#666; margin-bottom: 15px; font-weight: bold;">Rakiplerini ye, Mıknatıs kap, Kral ol!</p>
+            <p style="color:#666; margin-bottom: 15px; font-weight: bold;">Rakiplerini ye, combo kur, viral ol, kral ol!</p>
             <div id="game-over-stats" class="hidden stats">
                 Son Skor: <span id="final-score">0</span><br>
                 En Yüksek: <span id="best-score">0</span>
             </div>
+            <div class="mission-strip">
+                <h4>Bugün Hedefler</h4>
+                <div class="task"><span>💎 300 Skor</span><span id="task-1">0/300</span></div>
+                <div class="task"><span>⚡ 3 Dash</span><span id="task-2">0/3</span></div>
+                <div class="task"><span>🔥 Combo x5</span><span id="task-3">0/5</span></div>
+            </div>
+            <div class="quick-row">
+                <button class="mini-btn" id="challenge-btn">HEDEFİ GÖR</button>
+                <button class="mini-btn alt" id="share-btn">PAYLAŞ</button>
+            </div>
             <button class="play-btn" id="start-btn">HEMEN OYNA</button>
-            <p style="color:#aaa; font-size: 13px; margin-top:15px;">Mobilde ekrandaki joystick ile yön ver, DASH ile hızlan!</p>
+            <p style="color:#aaa; font-size: 13px; margin-top:15px;">Mobilde ekrandaki joystick ile yön ver, DASH ile hızlan, combo kur!</p>
         </div>
     </div>
 
@@ -98,38 +167,84 @@
         import * as THREE from 'three';
 
         let GAME_STATE = 'MENU'; 
-        let bestScore = localStorage.getItem('sweetSnakeBest') || 0;
+        let bestScore = Number(localStorage.getItem('sweetSnakeBest') || 0);
+        let playerStats = JSON.parse(localStorage.getItem('snakeRushStats') || '{"games":0,"wins":0,"comboBest":1,"dashCount":0,"lastShare":"","xp":0}');
+        let challengeProgress = {
+            scoreTarget: 300,
+            dashTarget: 3,
+            comboTarget: 5,
+            scoreCurrent: 0,
+            dashCurrent: 0,
+            comboCurrent: 0
+        };
+        let comboTicker = 1;
+        let comboTimer = 0;
+        let lastFoodTime = 0;
+        let particles = [];
+        let powerUps = [];
+        let screenShake = 0;
+        let currentTheme = 0;
+        const themes = [
+            { sky: '#74c8ff', fog: '#9ad9ff', ground: '#c9f4b8', accent: '#ff477e' },
+            { sky: '#7f7fd5', fog: '#c0c0ff', ground: '#dff7b8', accent: '#ff7af5' },
+            { sky: '#0f172a', fog: '#1e293b', ground: '#3a4d6f', accent: '#ffd166' },
+            { sky: '#0b3b3e', fog: '#0f766e', ground: '#8fe1a4', accent: '#7dd3fc' }
+        ];
         
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color('#87CEEB'); 
-        scene.fog = new THREE.FogExp2('#87CEEB', 0.0035); 
+        scene.background = new THREE.Color('#74c8ff');
+        scene.fog = new THREE.FogExp2('#9ad9ff', 0.0031);
+
+        const isMobile = /Mobi|Android|iPhone|iPad|Tablet/i.test(navigator.userAgent || '');
+        const MAX_BOTS = isMobile ? 9 : 12;
+        const MAX_FOODS = isMobile ? 110 : 150;
+        const MAX_POWERUPS = isMobile ? 3 : 4;
 
         // Kamera Kurulumu - Oyuncunun etrafı rahat görmesi için uzağa ve yukarı çekildi
         const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 800);
         
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); 
-        renderer.shadowMap.enabled = false; 
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.2 : 1.5));
+        renderer.shadowMap.enabled = false;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
         document.body.appendChild(renderer.domElement);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.95); 
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
         scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
-        dirLight.position.set(50, 100, 50);
+        const dirLight = new THREE.DirectionalLight(0xeef7ff, 1.2);
+        dirLight.position.set(80, 130, 55);
         scene.add(dirLight);
+
+        const rimLight = new THREE.PointLight(0xff97bf, 60, 350, 2);
+        rimLight.position.set(-80, 70, -60);
+        scene.add(rimLight);
+
+        const sceneGlow = new THREE.Mesh(
+            new THREE.SphereGeometry(450, 48, 48),
+            new THREE.MeshBasicMaterial({ color: 0xbfeaff, side: THREE.BackSide, transparent: true, opacity: 0.38 })
+        );
+        scene.add(sceneGlow);
 
         const mapSize = 400; 
         const groundGeo = new THREE.PlaneGeometry(mapSize, mapSize);
-        const groundMat = new THREE.MeshLambertMaterial({ color: '#dcedc1' }); 
+        const groundMat = new THREE.MeshStandardMaterial({ color: '#c9f4b8', roughness: 0.9, metalness: 0.08 });
         const ground = new THREE.Mesh(groundGeo, groundMat);
         ground.rotation.x = -Math.PI / 2;
         scene.add(ground);
 
+        const glowRing = new THREE.Mesh(
+            new THREE.RingGeometry(mapSize * 0.48, mapSize * 0.5, 128),
+            new THREE.MeshBasicMaterial({ color: 0xffd166, transparent: true, opacity: 0.28, side: THREE.DoubleSide })
+        );
+        glowRing.rotation.x = -Math.PI / 2;
+        glowRing.position.y = 0.12;
+        scene.add(glowRing);
+
         const gridHelper = new THREE.GridHelper(mapSize, 60, 0xffffff, 0xffffff);
-        gridHelper.position.y = 0.1;
+        gridHelper.position.y = 0.12;
         gridHelper.material.transparent = true;
-        gridHelper.material.opacity = 0.4;
+        gridHelper.material.opacity = 0.3;
         scene.add(gridHelper);
 
         const borderGeo = new THREE.BoxGeometry(mapSize, 4, mapSize);
@@ -139,11 +254,24 @@
         borderLines.position.y = 2;
         scene.add(borderLines);
 
+        const sparkleGeo = new THREE.BufferGeometry();
+        const sparkleCount = 180;
+        const sparklePositions = new Float32Array(sparkleCount * 3);
+        for (let i = 0; i < sparkleCount; i++) {
+            sparklePositions[i * 3] = (Math.random() - 0.5) * mapSize * 1.4;
+            sparklePositions[i * 3 + 1] = 12 + Math.random() * 60;
+            sparklePositions[i * 3 + 2] = (Math.random() - 0.5) * mapSize * 1.4;
+        }
+        sparkleGeo.setAttribute('position', new THREE.BufferAttribute(sparklePositions, 3));
+        const sparkleMat = new THREE.PointsMaterial({ color: 0xffffff, size: 1.2, transparent: true, opacity: 0.8 });
+        const sparkles = new THREE.Points(sparkleGeo, sparkleMat);
+        scene.add(sparkles);
+
         // KAPSÜL GEOMETRİSİ: Tesbih (Boncuk) görünümünü %100 yok eden silindirik sosis yapı!
-        const bodyGeoGlobal = new THREE.CapsuleGeometry(1.4, 3.2, 8, 16); 
-        bodyGeoGlobal.rotateX(Math.PI / 2); // Kapsülü yılanın gidiş yönüne (Z ekseni) yatırıyoruz
+        const bodyGeoGlobal = new THREE.CapsuleGeometry(1.5, 3.4, 8, 18);
+        bodyGeoGlobal.rotateX(Math.PI / 2);
         
-        const headGeoGlobal = new THREE.SphereGeometry(1.8, 24, 24);
+        const headGeoGlobal = new THREE.SphereGeometry(1.9, 28, 28);
         const eyeGeoGlobal = new THREE.SphereGeometry(0.45, 12, 12);
         const pupilGeoGlobal = new THREE.SphereGeometry(0.2, 12, 12);
         
@@ -171,19 +299,19 @@
                 let mesh, val, fType = type;
                 if (type === 'normal' && !pos && Math.random() < 0.03) fType = 'magnet';
 
-                if (fType === 'magnet') { 
-                    mesh = new THREE.Mesh(magnetBoxGeo, magnetMat); 
-                    val = 20; 
-                } else if (fType === 'super') { 
-                    mesh = new THREE.Mesh(donutGeo, superFoodMat); 
-                    mesh.scale.set(1.5, 1.5, 1.5); 
-                    val = 30; 
-                } else { 
-                    const rMat = foodMats[Math.floor(Math.random() * foodMats.length)]; 
-                    mesh = new THREE.Mesh(Math.random() > 0.5 ? candyGeo : donutGeo, rMat); 
-                    val = 10; 
+                if (fType === 'magnet') {
+                    mesh = new THREE.Mesh(magnetBoxGeo, magnetMat);
+                    val = 20;
+                } else if (fType === 'super') {
+                    mesh = new THREE.Mesh(donutGeo, superFoodMat);
+                    mesh.scale.set(1.5, 1.5, 1.5);
+                    val = 30;
+                } else {
+                    const rMat = foodMats[Math.floor(Math.random() * foodMats.length)];
+                    mesh = new THREE.Mesh(Math.random() > 0.5 ? candyGeo : donutGeo, rMat);
+                    val = 10;
                 }
-                
+
                 if (pos) {
                     mesh.position.copy(pos);
                     mesh.position.x += (Math.random() - 0.5) * 5;
@@ -193,12 +321,75 @@
                     mesh.position.x = (Math.random() - 0.5) * bound * 2;
                     mesh.position.z = (Math.random() - 0.5) * bound * 2;
                 }
-                
+
                 mesh.position.y = 1.2;
-                mesh.userData = { angle: Math.random() * Math.PI, speed: 0.02 + Math.random() * 0.03, value: val, type: fType };
+                const halo = new THREE.Mesh(
+                    new THREE.TorusGeometry(1.9, 0.12, 12, 42),
+                    new THREE.MeshBasicMaterial({
+                        color: fType === 'magnet' ? 0x00f2fe : fType === 'super' ? 0xff477e : mesh.material.color.clone(),
+                        transparent: true,
+                        opacity: 0.7
+                    })
+                );
+                halo.rotation.x = Math.PI / 2;
+                halo.position.y = -0.9;
+                mesh.add(halo);
+
+                mesh.userData = {
+                    angle: Math.random() * Math.PI,
+                    speed: 0.02 + Math.random() * 0.03,
+                    value: val,
+                    type: fType,
+                    halo: halo,
+                    baseScale: mesh.scale.clone()
+                };
                 scene.add(mesh);
                 foods.push({ mesh: mesh });
             }
+        }
+
+        function spawnParticleBurst(position, color, count = 16, spread = 2.2) {
+            for (let i = 0; i < count; i++) {
+                const p = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.28, 8, 8),
+                    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 })
+                );
+                p.position.copy(position);
+                p.userData = {
+                    velocity: new THREE.Vector3(
+                        (Math.random() - 0.5) * spread,
+                        Math.random() * 2.3,
+                        (Math.random() - 0.5) * spread
+                    ),
+                    life: 1.2 + Math.random() * 0.8,
+                    maxLife: 1.2 + Math.random() * 0.8,
+                    gravity: 0.02
+                };
+                scene.add(p);
+                particles.push(p);
+            }
+        }
+
+        function spawnPowerUp(type, pos) {
+            const colors = { shield: 0x8b5cf6, pulse: 0xffb703, magnet: 0x22d3ee };
+            const geom = new THREE.OctahedronGeometry(1.5, 0);
+            const mat = new THREE.MeshStandardMaterial({ color: colors[type], emissive: colors[type], emissiveIntensity: 0.9, metalness: 0.5, roughness: 0.2 });
+            const mesh = new THREE.Mesh(geom, mat);
+            mesh.position.copy(pos || new THREE.Vector3((Math.random() - 0.5) * 180, 1.6, (Math.random() - 0.5) * 180));
+            mesh.userData = { type, pulse: Math.random() * Math.PI * 2, spin: 0.05 + Math.random() * 0.03 };
+            scene.add(mesh);
+            powerUps.push(mesh);
+        }
+
+        function triggerScreenShake(amount) {
+            screenShake = Math.max(screenShake, amount);
+        }
+
+        function updateXPBar() {
+            const bar = document.getElementById('xp-bar');
+            if (!bar) return;
+            const xp = Math.min(playerStats.xp || 0, 1000);
+            bar.style.width = `${(xp / 1000) * 100}%`;
         }
 
         const snakes = [];
@@ -224,11 +415,15 @@
                 this.isBoosting = false;
                 this.boostDepleteTimer = 0;
 
-                // TESBİH GÖRÜNÜMÜNÜ ENGELLEYEN MÜKEMMEL MATERYAL (Emissive yüksek tutuldu ki 3D gölge sınırları silinsin)
-                const matColor = new THREE.MeshLambertMaterial({ 
-                    color: colorHex, 
-                    emissive: colorHex, 
-                    emissiveIntensity: 0.65 
+                const matColor = new THREE.MeshPhysicalMaterial({
+                    color: colorHex,
+                    emissive: colorHex,
+                    emissiveIntensity: 0.9,
+                    roughness: 0.28,
+                    metalness: 0.3,
+                    clearcoat: 1,
+                    clearcoatRoughness: 0.15,
+                    sheen: 0.7
                 });
                 this.matColor = matColor;
 
@@ -238,17 +433,26 @@
                 scene.add(this.head);
                 this.parts.push(this.head);
 
-                const eyeMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
-                const pupilMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
+                this.shield = 0;
+                this.flashTimer = 0;
+
+                this.headGlow = new THREE.Mesh(
+                    new THREE.SphereGeometry(2.35, 18, 18),
+                    new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.18 })
+                );
+                this.head.add(this.headGlow);
+
+                const eyeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.35 });
+                const pupilMat = new THREE.MeshBasicMaterial({ color: 0x151515 });
                 const leftEye = new THREE.Mesh(eyeGeoGlobal, eyeMat);
-                leftEye.position.set(0.8, 0.6, -1.2); 
+                leftEye.position.set(0.8, 0.6, -1.2);
                 const leftPupil = new THREE.Mesh(pupilGeoGlobal, pupilMat);
                 leftPupil.position.set(0.1, 0, -0.3);
                 leftEye.add(leftPupil);
                 this.head.add(leftEye);
 
                 const rightEye = new THREE.Mesh(eyeGeoGlobal, eyeMat);
-                rightEye.position.set(-0.8, 0.6, -1.2); 
+                rightEye.position.set(-0.8, 0.6, -1.2);
                 const rightPupil = new THREE.Mesh(pupilGeoGlobal, pupilMat);
                 rightPupil.position.set(-0.1, 0, -0.3);
                 rightEye.add(rightPupil);
@@ -441,6 +645,28 @@
                 } else if(this.isPlayer) {
                     document.getElementById('magnet-timer').style.display = 'none';
                 }
+
+                if (this.shield > 0) {
+                    this.shield -= delta;
+                    this.headGlow.material.opacity = 0.7;
+                    this.head.scale.setScalar(1.18);
+                    if (this.isPlayer) {
+                        document.querySelector('.powerup-chip.shield').style.opacity = '1';
+                    }
+                } else if (this.isPlayer) {
+                    document.querySelector('.powerup-chip.shield').style.opacity = '0.5';
+                }
+
+                const pulse = 0.92 + Math.sin(time * 10 + this.id) * 0.08;
+                this.head.scale.setScalar(this.shield > 0 ? 1.18 : pulse);
+                this.headGlow.material.opacity = this.shield > 0 ? 0.7 : 0.14 + Math.sin(time * 8 + this.id) * 0.05;
+                this.parts.forEach((part, index) => {
+                    const wave = 1 + Math.sin(time * 14 + index * 0.7 + this.id) * 0.08;
+                    part.scale.setScalar(this.shield > 0 ? wave * 1.15 : wave);
+                    if (part !== this.head && part.material && part.material.emissiveIntensity !== undefined) {
+                        part.material.emissiveIntensity = 0.7 + Math.sin(time * 11 + index) * 0.2;
+                    }
+                });
                 
                 if(currentKingId === this.id) {
                     crownMesh.position.copy(this.head.position);
@@ -460,6 +686,12 @@
             rect = joystickZone.getBoundingClientRect();
             centerX = rect.left + rect.width / 2;
             centerY = rect.top + rect.height / 2;
+        }
+
+        function handleOrientationLayout() {
+            const portrait = window.innerHeight > window.innerWidth;
+            document.body.dataset.orientation = portrait ? 'portrait' : 'landscape';
+            updateJoystickCenter();
         }
 
         function handleJoystick(e) {
@@ -515,7 +747,17 @@
         });
 
         const dashBtn = document.getElementById('dash-btn');
-        const triggerDash = (e) => { e.preventDefault(); if(playerSnake) playerSnake.isBoosting = true; dashBtn.classList.add('active-dash'); };
+        const triggerDash = (e) => {
+            e.preventDefault();
+            if (playerSnake) {
+                playerSnake.isBoosting = true;
+                challengeProgress.dashCurrent = Math.min(challengeProgress.dashTarget, challengeProgress.dashCurrent + 1);
+                playerStats.dashCount = (playerStats.dashCount || 0) + 1;
+                savePlayerStats();
+                updateMissionUI();
+            }
+            dashBtn.classList.add('active-dash');
+        };
         const endDash = (e) => { e.preventDefault(); if(playerSnake) playerSnake.isBoosting = false; dashBtn.classList.remove('active-dash'); };
         dashBtn.addEventListener('pointerdown', triggerDash);
         dashBtn.addEventListener('pointerup', endDash);
@@ -527,6 +769,11 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+            handleOrientationLayout();
+        });
+        window.addEventListener('orientationchange', handleOrientationLayout);
+        window.addEventListener('visibilitychange', () => {
+            if (!document.hidden) handleOrientationLayout();
         });
 
         function createFloatingText(text, position3D, color) {
@@ -563,11 +810,24 @@
         const botColors = [0xff8b94, 0xffaaa5, 0xffcc5c, 0xc7ceea, 0x4facfe, 0xf6d365, 0xa8e6cf];
 
         function spawnBot() {
+            if (snakes.filter(s => !s.isDead).length >= MAX_BOTS) return;
             const name = botNames[Math.floor(Math.random() * botNames.length)];
             const color = botColors[Math.floor(Math.random() * botColors.length)];
             const bound = mapSize / 2 - 40;
             const pos = new THREE.Vector3((Math.random() - 0.5) * bound * 2, 0, (Math.random() - 0.5) * bound * 2);
             new Snake(false, name, pos, color);
+        }
+
+        function maybeSpawnPowerUp() {
+            if (powerUps.length >= MAX_POWERUPS) return;
+            if (Math.random() < 0.34) {
+                const types = ['shield', 'pulse', 'magnet'];
+                spawnPowerUp(types[Math.floor(Math.random() * types.length)], new THREE.Vector3(
+                    (Math.random() - 0.5) * (mapSize - 50),
+                    1.6,
+                    (Math.random() - 0.5) * (mapSize - 50)
+                ));
+            }
         }
 
         function updateLeaderboard() {
@@ -595,22 +855,129 @@
             if(playerSnake && !playerSnake.isDead) document.getElementById('score-display').innerText = `Skor: ${playerSnake.score}`;
         }
 
+        function savePlayerStats() {
+            localStorage.setItem('snakeRushStats', JSON.stringify(playerStats));
+        }
+
+        function updateMissionUI() {
+            const scoreEl = document.getElementById('task-1');
+            const dashEl = document.getElementById('task-2');
+            const comboEl = document.getElementById('task-3');
+            scoreEl.textContent = `${Math.min(challengeProgress.scoreCurrent, challengeProgress.scoreTarget)}/${challengeProgress.scoreTarget}`;
+            dashEl.textContent = `${Math.min(challengeProgress.dashCurrent, challengeProgress.dashTarget)}/${challengeProgress.dashTarget}`;
+            comboEl.textContent = `${Math.min(challengeProgress.comboCurrent, challengeProgress.comboTarget)}/${challengeProgress.comboTarget}`;
+
+            const missionList = document.getElementById('mission-list');
+            if (missionList) {
+                const missions = [
+                    { label: 'Skor 300', value: `${Math.min(challengeProgress.scoreCurrent, 300)}/300` },
+                    { label: 'Dash 3', value: `${Math.min(challengeProgress.dashCurrent, 3)}/3` },
+                    { label: 'Combo x5', value: `${Math.min(challengeProgress.comboCurrent, 5)}/5` }
+                ];
+                missionList.innerHTML = missions.map((m, idx) => `<div class="mission-item"><span><strong>${idx + 1}.</strong> ${m.label}</span><span class="progress">${m.value}</span></div>`).join('');
+            }
+            updateXPBar();
+        }
+
+        function showComboText(value) {
+            const hud = document.getElementById('combo-hud');
+            if (!hud) return;
+            hud.textContent = `Combo x${value}`;
+            hud.classList.remove('show');
+            void hud.offsetWidth;
+            hud.classList.add('show');
+            clearTimeout(showComboText.timer);
+            showComboText.timer = setTimeout(() => hud.classList.remove('show'), 700);
+        }
+
+        function triggerViralBurst(position, text, color = '#fff') {
+            createFloatingText(text, position, color);
+            const feed = document.getElementById('kill-feed');
+            const el = document.createElement('div');
+            el.className = 'kill-msg';
+            el.innerHTML = `<span style="color:${color}">${text}</span>`;
+            feed.appendChild(el);
+            setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 1800);
+        }
+
+        function onFoodCollected(snake, food, value) {
+            const now = performance.now();
+            const delta = now - lastFoodTime;
+            if (delta < 1200) {
+                comboTicker += 1;
+                if (comboTicker > playerStats.comboBest) {
+                    playerStats.comboBest = comboTicker;
+                }
+            } else {
+                comboTicker = 1;
+            }
+            lastFoodTime = now;
+            comboTimer = 2.6;
+            if (snake.isPlayer) {
+                challengeProgress.comboCurrent = Math.max(challengeProgress.comboCurrent, comboTicker);
+                updateMissionUI();
+                showComboText(comboTicker);
+                if (comboTicker >= 5) {
+                    triggerViralBurst(food.mesh.position, '🔥 VIRAL COMBO!', '#ffd166');
+                    playerStats.xp += 20;
+                }
+            }
+            playerStats.xp += Math.max(2, Math.floor(value / 10));
+            if (snake.isPlayer && Math.random() < 0.18) {
+                maybeSpawnPowerUp();
+            }
+            savePlayerStats();
+        }
+
         function gameOver() {
+            playerStats.games += 1;
+            if (playerSnake && playerSnake.score > bestScore) {
+                bestScore = playerSnake.score;
+                localStorage.setItem('sweetSnakeBest', bestScore);
+            }
+            savePlayerStats();
             GAME_STATE = 'GAMEOVER';
             document.getElementById('ui-layer').classList.add('hidden');
             document.getElementById('menu-layer').classList.remove('hidden');
             document.getElementById('game-over-stats').classList.remove('hidden');
             document.getElementById('start-btn').innerText = 'TEKRAR OYNA';
             document.getElementById('final-score').innerText = playerSnake.score;
-            if (playerSnake.score > bestScore) { bestScore = playerSnake.score; localStorage.setItem('sweetSnakeBest', bestScore); }
             document.getElementById('best-score').innerText = bestScore;
         }
 
+        function applyPowerUpEffect(type) {
+            if (!playerSnake || playerSnake.isDead) return;
+            if (type === 'shield') {
+                playerSnake.shield = 8;
+                triggerViralBurst(playerSnake.head.position, '🛡️ SHIELD!', '#a78bfa');
+            }
+            if (type === 'pulse') {
+                playerSnake.isBoosting = true;
+                setTimeout(() => { if (playerSnake && !playerSnake.isDead) playerSnake.isBoosting = false; }, 1200);
+                triggerViralBurst(playerSnake.head.position, '⚡ PULSE!', '#fbbf24');
+            }
+            if (type === 'magnet') {
+                playerSnake.magnetTimer = 10;
+                triggerViralBurst(playerSnake.head.position, '🧲 MAGNET!', '#22d3ee');
+            }
+        }
+
         function startGame() {
+            comboTicker = 1;
+            lastFoodTime = 0;
+            challengeProgress.scoreCurrent = 0;
+            challengeProgress.dashCurrent = 0;
+            challengeProgress.comboCurrent = 1;
+            updateMissionUI();
+
             snakes.forEach(s => { s.isDead = true; s.parts.forEach(p => scene.remove(p)); if(s.head) scene.remove(s.head); });
             snakes.length = 0; 
             foods.forEach(f => scene.remove(f.mesh));
             foods.length = 0;
+            powerUps.forEach(p => scene.remove(p));
+            powerUps.length = 0;
+            particles.forEach(p => scene.remove(p));
+            particles.length = 0;
             document.getElementById('kill-feed').innerHTML = '';
 
             GAME_STATE = 'PLAYING';
@@ -620,15 +987,38 @@
             playerSnake = new Snake(true, "Sen", new THREE.Vector3(0,0,0), 0xff477e);
             updatePlayerScore();
             
-            for(let i=0; i<8; i++) spawnBot();
-            spawnFood(120, 'normal');
-            spawnFood(15, 'super');
+            const botCount = isMobile ? 6 : 8;
+            for(let i=0; i<botCount; i++) spawnBot();
+            spawnFood(Math.min(72, MAX_FOODS * 0.6), 'normal');
+            spawnFood(Math.min(10, Math.max(6, isMobile ? 6 : 10)), 'super');
             
             setTimeout(updateJoystickCenter, 100);
             updateLeaderboard();
         }
 
         document.getElementById('start-btn').addEventListener('click', startGame);
+
+        document.getElementById('challenge-btn').addEventListener('click', () => {
+            if (playerSnake && !playerSnake.isDead) {
+                triggerViralBurst(playerSnake.head.position, '🎯 Hedef Açık!', '#72f1b8');
+            } else {
+                showKillFeed('Hedef', 'Günlük görev', true);
+            }
+        });
+
+        document.getElementById('share-btn').addEventListener('click', async () => {
+            const text = `Ben ${bestScore} skor yaptım! Snake.io 3D Candy Rush'ta kral oluyorum! 🐍⚡`;
+            try {
+                if (navigator.share) {
+                    await navigator.share({ title: 'Candy Rush', text });
+                } else if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(text);
+                    triggerViralBurst(new THREE.Vector3(0, 0, 0), '✅ Skor kopyalandı!', '#7be0ff');
+                }
+                playerStats.lastShare = new Date().toISOString();
+                savePlayerStats();
+            } catch (err) {}
+        });
 
         for(let i=0; i<6; i++) spawnBot();
         spawnFood(80, 'normal');
@@ -638,117 +1028,202 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            const delta = Math.min(clock.getDelta(), 0.1); 
+            const delta = Math.min(clock.getDelta(), 0.1);
             const time = clock.getElapsedTime();
 
-            snakes.forEach(s => s.update(delta, time));
+            if (screenShake > 0) {
+                camera.position.x += (Math.random() - 0.5) * screenShake;
+                camera.position.y += (Math.random() - 0.5) * screenShake;
+                screenShake *= 0.88;
+            }
+
+            if (GAME_STATE === 'PLAYING') {
+                snakes.forEach(s => s.update(delta, time));
+            } else {
+                snakes.forEach(s => {
+                    if (!s.isDead) {
+                        s.head.rotation.y -= 0.01;
+                        s.head.position.x += Math.sin(time + s.id) * 0.02;
+                        s.head.position.z += Math.cos(time * 1.2 + s.id) * 0.02;
+                    }
+                });
+            }
 
             for (let j = foods.length - 1; j >= 0; j--) {
                 const f = foods[j];
                 f.mesh.rotation.y += f.mesh.userData.speed;
-                if(f.mesh.userData.type === 'magnet') { 
-                    f.mesh.rotation.x += f.mesh.userData.speed; 
-                } else { 
-                    f.mesh.position.y = 1.2 + Math.sin(time * 3 + f.mesh.userData.angle) * 0.4; 
+                if (f.mesh.userData.halo) {
+                    f.mesh.userData.halo.rotation.z += 0.03 + f.mesh.userData.speed;
+                    f.mesh.userData.halo.material.opacity = 0.45 + Math.sin(time * 5 + f.mesh.userData.angle) * 0.2;
+                }
+                if(f.mesh.userData.type === 'magnet') {
+                    f.mesh.rotation.x += f.mesh.userData.speed;
+                    f.mesh.rotation.z += f.mesh.userData.speed * 0.8;
+                    f.mesh.position.y = 1.6 + Math.sin(time * 5 + f.mesh.userData.angle) * 0.5;
+                } else {
+                    f.mesh.position.y = 1.2 + Math.sin(time * 3 + f.mesh.userData.angle) * 0.4;
                 }
             }
 
-            for(let i = snakes.length - 1; i >= 0; i--) {
-                let s1 = snakes[i];
-                if (s1.isDead) continue;
-
-                const limit = mapSize / 2 - 2;
-                if (Math.abs(s1.head.position.x) > limit || Math.abs(s1.head.position.z) > limit) {
-                    s1.die("Duvar");
-                    snakes.splice(i, 1);
-                    continue;
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.position.addScaledVector(p.userData.velocity, delta * 4);
+                p.userData.velocity.y -= p.userData.gravity * delta * 30;
+                p.userData.life -= delta;
+                p.material.opacity = Math.max(0, p.userData.life / p.userData.maxLife);
+                if (p.userData.life <= 0) {
+                    scene.remove(p);
+                    particles.splice(i, 1);
                 }
+            }
 
-                let hit = false, killer = null;
-                for(let j = 0; j < snakes.length; j++) {
-                    if (i === j) continue;
-                    let s2 = snakes[j];
-                    if (s2.isDead) continue;
-                    
-                    // Gövdelere çarpışma tespiti (Her 3 boğumda bir kontrol et ki kasmayı engellesin)
-                    for(let p = 0; p < s2.parts.length; p+=3) {
-                        if (s1.head.position.distanceToSquared(s2.parts[p].position) < 5.0) {
-                            hit = true; killer = s2; break;
-                        }
+            for (let i = powerUps.length - 1; i >= 0; i--) {
+                const power = powerUps[i];
+                power.rotation.y += 0.08;
+                power.position.y = 1.8 + Math.sin(time * 5 + power.userData.pulse) * 0.7;
+                if (playerSnake && playerSnake.head.position.distanceTo(power.position) < 7) {
+                    applyPowerUpEffect(power.userData.type);
+                    scene.remove(power);
+                    powerUps.splice(i, 1);
+                }
+            }
+
+            if (Math.random() < 0.005) {
+                currentTheme = (currentTheme + 1) % themes.length;
+                const theme = themes[currentTheme];
+                scene.background = new THREE.Color(theme.sky);
+                scene.fog.color = new THREE.Color(theme.fog);
+                ground.material.color = new THREE.Color(theme.ground);
+                borderMat.color = new THREE.Color(theme.accent);
+            }
+
+            sparkleGeo.attributes.position.array.forEach((value, index) => {
+                if (index % 3 === 1) {
+                    const base = 12 + ((index / 3) % 7) * 7;
+                    sparkleGeo.attributes.position.array[index] = base + Math.sin(time * 0.7 + index) * 5;
+                }
+            });
+            sparkleGeo.attributes.position.needsUpdate = true;
+            sparkles.rotation.y += 0.0008;
+            glowRing.rotation.z += 0.003;
+            ground.rotation.z = Math.sin(time * 0.22) * 0.04;
+
+            if (GAME_STATE === 'PLAYING') {
+                for (let i = snakes.length - 1; i >= 0; i--) {
+                    let s1 = snakes[i];
+                    if (s1.isDead) continue;
+
+                    const limit = mapSize / 2 - 2;
+                    if (Math.abs(s1.head.position.x) > limit || Math.abs(s1.head.position.z) > limit) {
+                        s1.die("Duvar");
+                        snakes.splice(i, 1);
+                        continue;
                     }
-                    if (hit) break;
-                }
 
-                if (hit && killer) {
-                    killer.score += Math.floor(s1.score / 2) + 50; 
-                    if(killer.isPlayer) updatePlayerScore();
-                    s1.die(killer.name);
-                    snakes.splice(i, 1);
-                    continue; 
-                }
-
-                for (let j = foods.length - 1; j >= 0; j--) {
-                    const f = foods[j];
-                    let eatDist = f.mesh.userData.type === 'super' ? 12.0 : 6.0;
-                    if (s1.head.position.distanceToSquared(f.mesh.position) < eatDist) {
-                        s1.score += f.mesh.userData.value;
-                        
-                        // Yılan katı tüp gibi göründüğü için uzaması için her yemde ÇİFT boğum eklenir
-                        s1.addBodyPart();
-                        s1.addBodyPart();
-
-                        if(f.mesh.userData.type === 'magnet') {
-                            s1.magnetTimer = 10; 
-                            if(s1.isPlayer) createFloatingText(`🧲 MIKNATIS!`, f.mesh.position, '#00f2fe');
+                    let hit = false, killer = null;
+                    for (let j = 0; j < snakes.length; j++) {
+                        if (i === j) continue;
+                        let s2 = snakes[j];
+                        if (s2.isDead) continue;
+                        for (let p = 0; p < s2.parts.length; p += 3) {
+                            if (s1.head.position.distanceToSquared(s2.parts[p].position) < 5.0) {
+                                hit = true; killer = s2; break;
+                            }
                         }
-                        if (s1.isPlayer) {
-                            updatePlayerScore();
-                            const hexStr = '#' + f.mesh.material.color.getHexString();
-                            if(f.mesh.userData.type !== 'magnet') createFloatingText(`+${f.mesh.userData.value}`, f.mesh.position, hexStr);
-                            s1.head.scale.setScalar(1.4);
-                            setTimeout(() => { if(s1 && !s1.isDead) s1.head.scale.setScalar(1.0); }, 150);
+                        if (hit) break;
+                    }
+
+                    if (hit && killer) {
+                        killer.score += Math.floor(s1.score / 2) + 50;
+                        if (killer.isPlayer) updatePlayerScore();
+                        triggerScreenShake(6);
+                        spawnParticleBurst(s1.head.position, s1.colorHex, 30, 3.5);
+                        s1.die(killer.name);
+                        snakes.splice(i, 1);
+                        continue;
+                    }
+
+                    for (let j = foods.length - 1; j >= 0; j--) {
+                        const f = foods[j];
+                        let eatDist = f.mesh.userData.type === 'super' ? 12.0 : 6.0;
+                        if (s1.head.position.distanceToSquared(f.mesh.position) < eatDist) {
+                            const baseValue = f.mesh.userData.value;
+                            let scoreGain = baseValue;
+                            if (s1.isPlayer && comboTicker > 1) {
+                                scoreGain += comboTicker * 4;
+                            }
+                            s1.score += scoreGain;
+                            challengeProgress.scoreCurrent = Math.max(challengeProgress.scoreCurrent, s1.score);
+                            if (s1.isPlayer) {
+                                playerStats.xp += baseValue;
+                                savePlayerStats();
+                                updateMissionUI();
+                            }
+
+                            s1.addBodyPart();
+                            s1.addBodyPart();
+                            spawnParticleBurst(f.mesh.position, f.mesh.material.color.getHex(), 10, 1.7);
+                            triggerScreenShake(1.5);
+
+                            if (f.mesh.userData.type === 'magnet') {
+                                s1.magnetTimer = 10;
+                                if (s1.isPlayer) createFloatingText(`🧲 MIKNATIS!`, f.mesh.position, '#00f2fe');
+                            }
+                            if (s1.isPlayer) {
+                                onFoodCollected(s1, f, baseValue);
+                                updatePlayerScore();
+                                const hexStr = '#' + f.mesh.material.color.getHexString();
+                                if (f.mesh.userData.type !== 'magnet') createFloatingText(`+${scoreGain}`, f.mesh.position, hexStr);
+                                s1.head.scale.setScalar(1.4);
+                                setTimeout(() => { if (s1 && !s1.isDead) s1.head.scale.setScalar(1.0); }, 150);
+                            }
+                            scene.remove(f.mesh);
+                            foods.splice(j, 1);
+                            if (foods.length < MAX_FOODS * 0.85) spawnFood(1, Math.random() < 0.05 ? 'super' : 'normal');
                         }
-                        scene.remove(f.mesh);
-                        foods.splice(j, 1);
-                        if (foods.length < 130) spawnFood(1, Math.random() < 0.05 ? 'super' : 'normal');
                     }
                 }
             }
 
             lbUpdateTimer += delta;
-            if(lbUpdateTimer > 1.0) { updateLeaderboard(); lbUpdateTimer = 0; }
+            if (lbUpdateTimer > 1.0) { updateLeaderboard(); lbUpdateTimer = 0; }
 
             if (GAME_STATE === 'PLAYING') {
                 if (playerSnake && !playerSnake.isDead) {
+                    if (comboTimer > 0) {
+                        comboTimer -= delta;
+                    } else if (comboTicker > 1) {
+                        comboTicker = 1;
+                    }
+
                     if (userJoystickActive) {
                         let diff = joystickAngle - playerSnake.moveAngle;
                         while (diff < -Math.PI) diff += Math.PI * 2;
                         while (diff > Math.PI) diff -= Math.PI * 2;
-                        playerSnake.moveAngle += diff * 0.18; 
+                        playerSnake.moveAngle += diff * 0.18;
                     } else {
-                        if(keys['ArrowUp'] || keys['w']) playerSnake.moveAngle = -Math.PI/2;
-                        if(keys['ArrowDown'] || keys['s']) playerSnake.moveAngle = Math.PI/2;
-                        if(keys['ArrowLeft'] || keys['a']) playerSnake.moveAngle = Math.PI;
-                        if(keys['ArrowRight'] || keys['d']) playerSnake.moveAngle = 0;
+                        if (keys['ArrowUp'] || keys['w']) playerSnake.moveAngle = -Math.PI / 2;
+                        if (keys['ArrowDown'] || keys['s']) playerSnake.moveAngle = Math.PI / 2;
+                        if (keys['ArrowLeft'] || keys['a']) playerSnake.moveAngle = Math.PI;
+                        if (keys['ArrowRight'] || keys['d']) playerSnake.moveAngle = 0;
                     }
-                    
-                    const targetFov = playerSnake.isBoosting ? 65 : 55;
+
+                    if (keys[' '] || keys['Space']) {
+                        playerSnake.isBoosting = true; dashBtn.classList.add('active-dash');
+                    }
+
+                    const targetFov = playerSnake.isBoosting ? 67 : 56;
                     camera.fov += (targetFov - camera.fov) * 0.1;
                     camera.updateProjectionMatrix();
 
-                    /* KESİN ÇÖZÜM: SABİT KAMERA! (Ekran Dönmesi Tamamen Bitti) */
-                    const camDist = 55; // Kameranın Z eksenindeki sabit uzaklığı
-                    const camHeight = 85; // Kameranın Y eksenindeki yüksekliği
-                    
-                    // Kamera hep oyuncunun bulunduğu noktanın belirli bir gerisinden ve üstünden bakar
+                    const camDist = 55;
+                    const camHeight = 86;
                     const targetCamX = playerSnake.head.position.x;
                     const targetCamZ = playerSnake.head.position.z + camDist;
-                    
                     camera.position.lerp(new THREE.Vector3(targetCamX, camHeight, targetCamZ), 0.1);
-                    
-                    // Kamera Yılanın kafasına doğrudan bakmak yerine, biraz daha ileriye sabit bir açıyla bakar.
+
                     const lookTarget = playerSnake.head.position.clone();
-                    lookTarget.z -= 15; // Z ekseninde ileriye bak (Böylece kamera yılan dönünce sağa sola savrulmaz!)
+                    lookTarget.z -= 15;
                     camera.lookAt(lookTarget);
                 }
             } else {
@@ -758,12 +1233,14 @@
                     if (king) target.copy(king.head.position);
                 }
                 const menuTime = time * 0.2;
-                camera.position.lerp(new THREE.Vector3(target.x + Math.sin(menuTime)*70, 80, target.z + Math.cos(menuTime)*70), 0.05);
+                camera.position.lerp(new THREE.Vector3(target.x + Math.sin(menuTime) * 70, 80, target.z + Math.cos(menuTime) * 70), 0.05);
                 camera.lookAt(target);
             }
 
             renderer.render(scene, camera);
         }
+
+        updateMissionUI();
 
         window.onload = function() {
             animate();
