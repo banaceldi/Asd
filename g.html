@@ -59,6 +59,13 @@
         .boss-event small { display: block; margin-top: 4px; color: rgba(255,255,255,.8); font-size: 10px; }
         .boss-track { height: 7px; margin-top: 7px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.15); }
         .boss-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff477e, #ffd166, #7ef9ff); transition: width .15s linear; }
+        .starter-guide { position: absolute; left: 50%; top: 132px; transform: translateX(-50%); width: min(360px, 82vw); padding: 10px 12px; border: 1px solid rgba(126,249,255,.55); border-radius: 14px; color: white; background: rgba(5,14,39,.82); box-shadow: 0 12px 28px rgba(0,0,0,.25); pointer-events: auto; z-index: 30; }
+        .starter-guide strong { display: block; color: #7ef9ff; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+        .starter-guide p { margin: 4px 0 8px; color: rgba(255,255,255,.82); font-size: 11px; line-height: 1.35; font-weight: 700; }
+        .starter-guide-footer { display: flex; align-items: center; gap: 8px; }
+        .starter-progress { flex: 1; height: 5px; border-radius: 99px; overflow: hidden; background: rgba(255,255,255,.15); }
+        .starter-progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #7ef9ff, #ff477e); transition: width .2s linear; }
+        .starter-dismiss { border: 0; border-radius: 8px; padding: 5px 8px; background: #ff477e; color: white; font-size: 9px; font-weight: 900; cursor: pointer; }
         .cinematic-flash { position: absolute; inset: 0; background: rgba(255, 209, 102, 0.35); opacity: 0; pointer-events: none; z-index: 14; }
         .cinematic-flash.active { animation: cinematicFlash .55s ease-out; }
         @keyframes cinematicFlash { 0% { opacity: .8; } 100% { opacity: 0; } }
@@ -129,6 +136,9 @@
             .boss-event strong { font-size: 9px; }
             .boss-event small { font-size: 8px; margin-top: 2px; }
             .boss-track { height: 5px; margin-top: 4px; }
+            .starter-guide { top: 78px; width: min(300px, 78vw); padding: 8px 9px; }
+            .starter-guide strong { font-size: 9px; }
+            .starter-guide p { font-size: 9px; margin: 3px 0 6px; }
             .combo-hud { top: 42px; font-size: 10px; padding: 5px 10px; border-width: 1px; }
             .controls { padding-bottom: max(3px, env(safe-area-inset-bottom)); gap: 7px; }
             #joystick-zone { width: min(112px, 27vw); height: min(112px, 27vw); border-width: 2px; }
@@ -390,6 +400,11 @@
             <small id="boss-status">Boost ile çekirdeğe yaklaş ve ödülü kap!</small>
             <div class="boss-track"><div class="boss-fill" id="boss-fill"></div></div>
         </div>
+        <div class="starter-guide hidden" id="starter-guide">
+            <strong id="starter-guide-title">HAREKETE BAŞLA</strong>
+            <p id="starter-guide-text">Joystick veya WASD ile yön ver, parlak yemleri topla ve büyümeye başla.</p>
+            <div class="starter-guide-footer"><div class="starter-progress"><div class="starter-progress-fill" id="starter-progress-fill"></div></div><button class="starter-dismiss" id="starter-dismiss">ANLADIM</button></div>
+        </div>
         <div class="top-bar">
             <div class="left-hud">
                 <div class="score-box" id="score-display">Skor: 0</div>
@@ -544,6 +559,7 @@
         playerStats.gold = Number(playerStats.gold || 0);
         playerStats.selectedAccessory = playerStats.selectedAccessory || 'none';
         playerStats.ownedAccessories = Array.isArray(playerStats.ownedAccessories) ? playerStats.ownedAccessories : ['none'];
+        playerStats.starterGuideSeen = Boolean(playerStats.starterGuideSeen);
         const floorStyles = [
             { id: 'ocean', name: 'Mavi grid', preview: 'ocean', ground: 0x1769aa, line: 0xffffff, opacity: 0.86, divisions: 60 },
             { id: 'ice', name: 'Buz grid', preview: 'ice', ground: 0x2b9ed8, line: 0xffffff, opacity: 0.92, divisions: 46 },
@@ -637,9 +653,12 @@
         scene.fog = new THREE.FogExp2('#9ad9ff', 0.0031);
 
         const MAX_BOTS = isMobile ? 5 : 8;
-        const MAX_FOODS = isMobile ? 70 : 105;
+        const MAX_FOODS = isMobile ? 95 : 140;
         const MAX_POWERUPS = isMobile ? 2 : 3;
         const PARTICLE_BUDGET = isMobile ? 70 : 140;
+        const FOOD_CELL_SIZE = 28;
+        const foodSpatialIndex = new Map();
+        let starterGuideTime = 0;
         const particleGeometry = new THREE.SphereGeometry(0.28, 8, 8);
         const trailGeometry = new THREE.SphereGeometry(0.42, 10, 10);
         const powerUpGeometry = new THREE.OctahedronGeometry(1.5, 0);
@@ -998,6 +1017,36 @@
             }
         }
 
+        function foodCellKey(x, z) {
+            return `${Math.floor(x / FOOD_CELL_SIZE)}:${Math.floor(z / FOOD_CELL_SIZE)}`;
+        }
+
+        function rebuildFoodSpatialIndex() {
+            foodSpatialIndex.clear();
+            foods.forEach(food => {
+                const key = foodCellKey(food.mesh.position.x, food.mesh.position.z);
+                let bucket = foodSpatialIndex.get(key);
+                if (!bucket) {
+                    bucket = [];
+                    foodSpatialIndex.set(key, bucket);
+                }
+                bucket.push(food);
+            });
+        }
+
+        function nearbyFoods(position) {
+            const centerX = Math.floor(position.x / FOOD_CELL_SIZE);
+            const centerZ = Math.floor(position.z / FOOD_CELL_SIZE);
+            const nearby = [];
+            for (let x = centerX - 1; x <= centerX + 1; x++) {
+                for (let z = centerZ - 1; z <= centerZ + 1; z++) {
+                    const bucket = foodSpatialIndex.get(`${x}:${z}`);
+                    if (bucket) nearby.push(...bucket);
+                }
+            }
+            return nearby;
+        }
+
         function spawnParticleBurst(position, color, count = 16, spread = 2.2) {
             const available = Math.max(0, PARTICLE_BUDGET - particles.length);
             count = Math.min(count, available);
@@ -1222,6 +1271,36 @@
             document.querySelectorAll('[data-mode]').forEach(button => {
                 button.classList.toggle('selected', button.dataset.mode === playerStats.selectedMode);
             });
+        }
+
+        function updateStarterGuide(delta) {
+            const guide = document.getElementById('starter-guide');
+            if (!guide || playerStats.starterGuideSeen || starterGuideTime <= 0) return;
+            starterGuideTime = Math.max(0, starterGuideTime - delta);
+            const elapsed = 60 - starterGuideTime;
+            const title = document.getElementById('starter-guide-title');
+            const text = document.getElementById('starter-guide-text');
+            const progress = document.getElementById('starter-progress-fill');
+            if (elapsed < 15) {
+                title.textContent = 'HAREKETE BAŞLA';
+                text.textContent = 'Joystick veya WASD ile yön ver, parlak yemleri topla ve büyümeye başla.';
+            } else if (elapsed < 30) {
+                title.textContent = 'ALTIN VE COMBO';
+                text.textContent = 'Altın coinleri topla; yemleri arka arkaya alarak combo ve XP kazan.';
+            } else if (elapsed < 45) {
+                title.textContent = 'DASH ZAMANI';
+                text.textContent = 'Rakibin önünü kesmek için DASH kullan. Gücü uzun süre tutarsan gövde azalır.';
+            } else {
+                title.textContent = 'GÜÇLEN VE KEŞFET';
+                text.textContent = 'Power-up topla, landmark’ları takip et ve Candy Titan için hazır ol.';
+            }
+            progress.style.width = `${(elapsed / 60) * 100}%`;
+            guide.classList.remove('hidden');
+            if (starterGuideTime <= 0) {
+                playerStats.starterGuideSeen = true;
+                savePlayerStats();
+                guide.classList.add('hidden');
+            }
         }
 
         function setupLobbyModals() {
@@ -2134,6 +2213,7 @@
             if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
             if (audioContext.state === 'suspended') audioContext.resume();
             comboTicker = 1;
+            starterGuideTime = playerStats.starterGuideSeen ? 0 : 60;
             lastFoodTime = 0;
             viralMeter = 0;
             premiumTicker = 0;
@@ -2171,6 +2251,7 @@
             document.getElementById('menu-layer').classList.remove('game-over-active');
             document.getElementById('menu-layer').classList.add('hidden');
             document.getElementById('ui-layer').classList.remove('hidden');
+            document.getElementById('starter-guide').classList.toggle('hidden', playerStats.starterGuideSeen);
             document.getElementById('feature-banner').textContent = playerStats.selectedMode === 'boss' ? 'BOSS RUSH ACTIVE' : playerStats.selectedMode === 'time' ? 'TIME ATTACK · 90s' : 'CLASSIC ARENA';
             
             playerSnake = new Snake(true, playerStats.playerName || 'Oyuncu', new THREE.Vector3(0,0,0), 0xff477e);
@@ -2221,6 +2302,13 @@
             } catch (err) {}
         });
 
+        document.getElementById('starter-dismiss').addEventListener('click', () => {
+            playerStats.starterGuideSeen = true;
+            starterGuideTime = 0;
+            savePlayerStats();
+            document.getElementById('starter-guide').classList.add('hidden');
+        });
+
         for(let i=0; i<Math.min(4, MAX_BOTS); i++) spawnBot();
         spawnFood(Math.min(48, MAX_FOODS * 0.7), 'normal');
 
@@ -2239,6 +2327,7 @@
             }
 
             if (GAME_STATE === 'PLAYING') {
+                updateStarterGuide(delta);
                 if (playerStats.selectedMode === 'time') {
                     matchTimer = Math.max(0, matchTimer - delta);
                     const banner = document.getElementById('feature-banner');
@@ -2355,6 +2444,7 @@
             }
 
             if (GAME_STATE === 'PLAYING') {
+                rebuildFoodSpatialIndex();
                 for (let i = snakes.length - 1; i >= 0; i--) {
                     let s1 = snakes[i];
                     if (s1.isDead) continue;
@@ -2401,8 +2491,11 @@
                         continue;
                     }
 
-                    for (let j = foods.length - 1; j >= 0; j--) {
-                        const f = foods[j];
+                    const localFoods = nearbyFoods(s1.head.position);
+                    for (let j = localFoods.length - 1; j >= 0; j--) {
+                        const f = localFoods[j];
+                        const foodIndex = foods.indexOf(f);
+                        if (foodIndex < 0) continue;
                         let eatDist = f.mesh.userData.type === 'super' ? 12.0 : 6.0;
                         if (s1.head.position.distanceToSquared(f.mesh.position) < eatDist) {
                             const baseValue = f.mesh.userData.value;
@@ -2437,7 +2530,7 @@
                                 setTimeout(() => { if (s1 && !s1.isDead) s1.head.scale.setScalar(1.0); }, 150);
                             }
                             disposeFoodMesh(f.mesh);
-                            foods.splice(j, 1);
+                            foods.splice(foodIndex, 1);
                             if (foods.length < MAX_FOODS * 0.85) spawnFood(1, Math.random() < 0.05 ? 'super' : 'normal');
                         }
                     }
