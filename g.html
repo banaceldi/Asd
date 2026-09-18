@@ -11,10 +11,10 @@
         body { background: radial-gradient(circle at top, #dff7ff 0%, #99d9ff 18%, #75c9ff 32%, #4fa8ff 60%, #2b7ae9 100%); font-family: 'Segoe UI', system-ui, sans-serif; touch-action: none; overscroll-behavior: none; -webkit-tap-highlight-color: transparent; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
         canvas { display: block; position: fixed; inset: 0; width: 100vw; height: 100vh; filter: saturate(1.2) contrast(1.05); }
         
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
-        .top-bar { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
-        .left-hud { display: flex; flex-direction: column; gap: 10px; }
-        .score-box { background: rgba(255,255,255,0.18); border: 2px solid rgba(255,255,255,0.8); color: #ffffff; font-size: 24px; font-weight: 900; box-shadow: 0 8px 25px rgba(8, 43, 89, 0.35), inset 0 1px 0 rgba(255,255,255,0.6); backdrop-filter: blur(10px); border-radius: 18px; padding: 10px 20px; text-shadow: 0 2px 10px rgba(0,0,0,0.15); }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: flex; flex-direction: column; justify-content: space-between; padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+        .top-bar { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+        .left-hud { display: flex; flex-direction: column; gap: 8px; }
+        .score-box { background: rgba(255,255,255,0.18); border: 2px solid rgba(255,255,255,0.8); color: #ffffff; font-size: clamp(14px, 1.7vw, 22px); font-weight: 900; box-shadow: 0 8px 25px rgba(8, 43, 89, 0.35), inset 0 1px 0 rgba(255,255,255,0.6); backdrop-filter: blur(10px); border-radius: 14px; padding: 7px 12px; text-shadow: 0 2px 10px rgba(0,0,0,0.15); }
         
         #magnet-timer { display: none; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: white; padding: 8px 15px; border-radius: 15px; font-weight: 800; font-size: 16px; border: 2px solid rgba(255,255,255,0.9); box-shadow: 0 0 15px rgba(0, 242, 254, 0.8); animation: pulse 1s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
@@ -24,23 +24,23 @@
         .kill-msg span { padding: 2px 6px; border-radius: 5px; }
         @keyframes slideIn { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        .leaderboard { background: rgba(255,255,255,0.18); padding: 15px; border-radius: 18px; border: 2px solid rgba(255,255,255,0.8); color: #fff; backdrop-filter: blur(12px); display: flex; flex-direction: column; gap: 6px; width: 195px; box-shadow: 0 10px 24px rgba(7, 19, 35, 0.25); }
-        .lb-title { font-size: 14px; text-transform: uppercase; color: rgba(255,255,255,0.85); font-weight: 900; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 5px; margin-bottom: 5px; text-align: center; letter-spacing: 0.06em; }
-        .lb-item { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; align-items: center; color: rgba(255,255,255,0.92); }
-        .lb-item.me { color: #ffe4ef; font-weight: 900; background: rgba(255, 71, 126, 0.18); padding: 5px 7px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); }
-        .color-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 0 12px currentColor; }
+        .leaderboard { background: rgba(255,255,255,0.18); padding: 10px 12px; border-radius: 14px; border: 2px solid rgba(255,255,255,0.8); color: #fff; backdrop-filter: blur(12px); display: flex; flex-direction: column; gap: 4px; width: 160px; box-shadow: 0 10px 24px rgba(7, 19, 35, 0.25); }
+        .lb-title { font-size: 11px; text-transform: uppercase; color: rgba(255,255,255,0.85); font-weight: 900; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 4px; margin-bottom: 4px; text-align: center; letter-spacing: 0.06em; }
+        .lb-item { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; align-items: center; color: rgba(255,255,255,0.92); }
+        .lb-item.me { color: #ffe4ef; font-weight: 900; background: rgba(255, 71, 126, 0.18); padding: 4px 6px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.18); }
+        .color-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 0 12px currentColor; }
 
-        .quest-panel { background: rgba(255,255,255,0.18); border: 2px solid rgba(255,255,255,0.8); border-radius: 18px; padding: 10px 12px; color: white; box-shadow: 0 10px 24px rgba(7, 19, 35, 0.18); backdrop-filter: blur(12px); margin-top: 12px; width: 220px; }
-        .quest-panel h3 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,.8); }
-        .mission-item { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; margin: 6px 0; color: rgba(255,255,255,.9); }
+        .quest-panel { background: rgba(255,255,255,0.18); border: 2px solid rgba(255,255,255,0.8); border-radius: 14px; padding: 8px 10px; color: white; box-shadow: 0 10px 24px rgba(7, 19, 35, 0.18); backdrop-filter: blur(12px); margin-top: 8px; width: 180px; }
+        .quest-panel h3 { margin: 0 0 6px; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: rgba(255,255,255,.8); }
+        .mission-item { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; margin: 4px 0; color: rgba(255,255,255,.9); }
         .mission-item strong { color: #ffe082; }
         .mission-item .progress { color: #9ef0ff; }
 
-        .xp-bar-wrap { margin-top: 12px; width: 220px; background: rgba(11,18,39,0.22); border: 1px solid rgba(255,255,255,0.4); border-radius: 999px; overflow: hidden; }
-        .xp-bar { height: 12px; width: 0%; background: linear-gradient(90deg, #7ef9ff, #59d4ff, #ffcf5c); box-shadow: 0 0 18px rgba(126,249,255,0.7); transition: width 0.25s ease; }
+        .xp-bar-wrap { margin-top: 8px; width: 180px; background: rgba(11,18,39,0.22); border: 1px solid rgba(255,255,255,0.4); border-radius: 999px; overflow: hidden; }
+        .xp-bar { height: 10px; width: 0%; background: linear-gradient(90deg, #7ef9ff, #59d4ff, #ffcf5c); box-shadow: 0 0 18px rgba(126,249,255,0.7); transition: width 0.25s ease; }
 
-        .powerup-strip { display: flex; gap: 8px; margin-top: 12px; }
-        .powerup-chip { flex: 1; min-width: 70px; padding: 8px 7px; border-radius: 12px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.6); color: white; font-weight: 800; text-align: center; box-shadow: inset 0 1px 0 rgba(255,255,255,0.2); }
+        .powerup-strip { display: flex; gap: 6px; margin-top: 8px; }
+        .powerup-chip { flex: 1; min-width: 52px; padding: 6px 4px; border-radius: 10px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.6); color: white; font-weight: 800; text-align: center; box-shadow: inset 0 1px 0 rgba(255,255,255,0.2); font-size: 10px; }
         .powerup-chip.shield { background: linear-gradient(135deg, rgba(124, 92, 255, 0.75), rgba(59, 130, 246, 0.7)); }
         .powerup-chip.pulse { background: linear-gradient(135deg, rgba(252, 211, 77, 0.82), rgba(249, 115, 22, 0.72)); }
         .powerup-chip.magnet { background: linear-gradient(135deg, rgba(34, 211, 238, 0.8), rgba(59, 130, 246, 0.75)); }
@@ -49,29 +49,29 @@
         .combo-hud.show { display: block; animation: comboPulse 0.5s ease; }
         @keyframes comboPulse { 0% { transform: translateX(-50%) scale(.8); opacity: .5; } 50% { transform: translateX(-50%) scale(1.06); opacity: 1; } 100% { transform: translateX(-50%) scale(1); opacity: 1; } }
         
-        .controls { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: max(10px, env(safe-area-inset-bottom)); pointer-events: auto; gap: 16px; }
-        #joystick-zone { width: min(150px, 32vw); height: min(150px, 32vw); max-width: 150px; max-height: 150px; background: rgba(255,255,255,0.18); border-radius: 50%; border: 3px solid rgba(255,255,255,0.9); display: flex; justify-content: center; align-items: center; position: relative; backdrop-filter: blur(10px); box-shadow: inset 0 0 22px rgba(255,255,255,0.18), 0 12px 25px rgba(11, 29, 68, 0.16); touch-action: none; }
+        .controls { display: flex; justify-content: space-between; align-items: flex-end; padding-bottom: max(8px, env(safe-area-inset-bottom)); pointer-events: auto; gap: 12px; }
+        #joystick-zone { width: min(120px, 26vw); height: min(120px, 26vw); max-width: 120px; max-height: 120px; background: rgba(255,255,255,0.18); border-radius: 50%; border: 3px solid rgba(255,255,255,0.9); display: flex; justify-content: center; align-items: center; position: relative; backdrop-filter: blur(10px); box-shadow: inset 0 0 22px rgba(255,255,255,0.18), 0 12px 25px rgba(11, 29, 68, 0.16); touch-action: none; }
         #joystick-knob { width: 36%; height: 36%; background: linear-gradient(135deg, #ff8fab, #ff477e); border-radius: 50%; box-shadow: 0 0 18px rgba(255, 71, 126, 0.8), inset 0 2px 8px rgba(255,255,255,0.4); pointer-events: none; position: absolute; transform: translate(0, 0); transition: background 0.2s; }
         
-        #dash-btn { width: min(110px, 23vw); height: min(110px, 23vw); max-width: 110px; max-height: 110px; border-radius: 50%; background: linear-gradient(135deg, #ffd86b, #ffb347 35%, #ff8a65 100%); border: 3px solid rgba(255,255,255,0.9); color: #fff; font-weight: 900; font-size: clamp(14px, 2.2vw, 22px); box-shadow: 0 0 25px rgba(255, 165, 77, 0.8), inset 0 2px 8px rgba(255,255,255,0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.1s ease, box-shadow 0.2s ease; touch-action: manipulation; }
+        #dash-btn { width: min(92px, 20vw); height: min(92px, 20vw); max-width: 92px; max-height: 92px; border-radius: 50%; background: linear-gradient(135deg, #ffd86b, #ffb347 35%, #ff8a65 100%); border: 3px solid rgba(255,255,255,0.9); color: #fff; font-weight: 900; font-size: clamp(12px, 1.8vw, 18px); box-shadow: 0 0 25px rgba(255, 165, 77, 0.8), inset 0 2px 8px rgba(255,255,255,0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.1s ease, box-shadow 0.2s ease; touch-action: manipulation; }
         #dash-btn:active, #dash-btn.active-dash { transform: scale(0.85); background: linear-gradient(135deg, #ffb347, #ff7b54); box-shadow: 0 0 30px rgba(255, 127, 80, 1), inset 0 2px 8px rgba(255,255,255,0.5); }
 
         @media (orientation: portrait) {
-            #ui-layer { padding-top: max(18px, env(safe-area-inset-top)); }
-            .top-bar { flex-direction: column; align-items: flex-start; }
-            .leaderboard { width: min(190px, 52vw); }
-            .quest-panel, .xp-bar-wrap { width: min(220px, 55vw); }
-            .controls { padding-bottom: max(18px, env(safe-area-inset-bottom)); }
+            #ui-layer { padding-top: max(12px, env(safe-area-inset-top)); }
+            .top-bar { flex-direction: row; align-items: flex-start; }
+            .leaderboard { width: 150px; }
+            .quest-panel, .xp-bar-wrap { width: 160px; }
+            .controls { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
         }
 
         @media (orientation: landscape) and (max-height: 520px) {
-            .leaderboard { width: 150px; padding: 10px; }
-            .quest-panel { width: 170px; padding: 8px 10px; }
-            .xp-bar-wrap { width: 170px; }
-            .powerup-strip { margin-top: 8px; }
-            .powerup-chip { min-width: 54px; font-size: 11px; padding: 6px 4px; }
-            #joystick-zone { width: 110px; height: 110px; }
-            #dash-btn { width: 86px; height: 86px; }
+            .leaderboard { width: 130px; padding: 7px 8px; }
+            .quest-panel { width: 140px; padding: 6px 8px; }
+            .xp-bar-wrap { width: 140px; }
+            .powerup-strip { margin-top: 6px; }
+            .powerup-chip { min-width: 42px; font-size: 9px; }
+            #joystick-zone { width: 96px; height: 96px; }
+            #dash-btn { width: 76px; height: 76px; }
         }
 
         .floating-text { position: absolute; font-weight: 900; font-size: 26px; -webkit-text-stroke: 1px #fff; pointer-events: none; transform: translate(-50%, -50%); animation: floatUp 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards; z-index: 5; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
@@ -418,12 +418,13 @@
                 const matColor = new THREE.MeshPhysicalMaterial({
                     color: colorHex,
                     emissive: colorHex,
-                    emissiveIntensity: 0.9,
-                    roughness: 0.28,
-                    metalness: 0.3,
+                    emissiveIntensity: 1.1,
+                    roughness: 0.2,
+                    metalness: 0.45,
                     clearcoat: 1,
-                    clearcoatRoughness: 0.15,
-                    sheen: 0.7
+                    clearcoatRoughness: 0.08,
+                    sheen: 0.9,
+                    sheenColor: new THREE.Color(colorHex)
                 });
                 this.matColor = matColor;
 
@@ -437,10 +438,18 @@
                 this.flashTimer = 0;
 
                 this.headGlow = new THREE.Mesh(
-                    new THREE.SphereGeometry(2.35, 18, 18),
-                    new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.18 })
+                    new THREE.SphereGeometry(2.6, 24, 24),
+                    new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.2 })
                 );
                 this.head.add(this.headGlow);
+
+                this.headAura = new THREE.Mesh(
+                    new THREE.TorusGeometry(2.8, 0.2, 12, 48),
+                    new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.35, side: THREE.DoubleSide })
+                );
+                this.headAura.rotation.x = Math.PI / 2;
+                this.headAura.position.y = -0.35;
+                this.head.add(this.headAura);
 
                 const eyeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.35 });
                 const pupilMat = new THREE.MeshBasicMaterial({ color: 0x151515 });
@@ -478,8 +487,18 @@
             }
 
             addBodyPart(isInit = false) {
-                const part = new THREE.Mesh(bodyGeoGlobal, this.matColor);
+                const part = new THREE.Mesh(bodyGeoGlobal, this.matColor.clone());
                 part.position.copy(this.head.position);
+                part.material.emissiveIntensity = 0.9;
+                part.material.clearcoat = 1;
+                part.material.clearcoatRoughness = 0.12;
+                const glow = new THREE.Mesh(
+                    new THREE.SphereGeometry(1.8, 12, 12),
+                    new THREE.MeshBasicMaterial({ color: this.colorHex, transparent: true, opacity: 0.12 })
+                );
+                glow.scale.set(1.25, 1.25, 1.25);
+                part.add(glow);
+                part.userData.glow = glow;
                 scene.add(part);
                 this.parts.push(part);
             }
@@ -659,12 +678,19 @@
 
                 const pulse = 0.92 + Math.sin(time * 10 + this.id) * 0.08;
                 this.head.scale.setScalar(this.shield > 0 ? 1.18 : pulse);
-                this.headGlow.material.opacity = this.shield > 0 ? 0.7 : 0.14 + Math.sin(time * 8 + this.id) * 0.05;
+                this.headGlow.material.opacity = this.shield > 0 ? 0.8 : 0.18 + Math.sin(time * 8 + this.id) * 0.08;
+                this.headAura.material.opacity = this.shield > 0 ? 0.55 : 0.22 + Math.sin(time * 10 + this.id) * 0.12;
+                this.headAura.rotation.z += 0.03;
                 this.parts.forEach((part, index) => {
                     const wave = 1 + Math.sin(time * 14 + index * 0.7 + this.id) * 0.08;
                     part.scale.setScalar(this.shield > 0 ? wave * 1.15 : wave);
                     if (part !== this.head && part.material && part.material.emissiveIntensity !== undefined) {
-                        part.material.emissiveIntensity = 0.7 + Math.sin(time * 11 + index) * 0.2;
+                        part.material.emissiveIntensity = 0.9 + Math.sin(time * 11 + index) * 0.25;
+                    }
+                    if (part.userData && part.userData.glow) {
+                        const glowLevel = 0.1 + (Math.sin(time * 12 + index * 0.9 + this.id) + 1) * 0.08;
+                        part.userData.glow.material.opacity = this.shield > 0 ? glowLevel + 0.12 : glowLevel;
+                        part.userData.glow.scale.setScalar(1.2 + (this.shield > 0 ? 0.18 : 0.1));
                     }
                 });
                 
