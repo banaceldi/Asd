@@ -96,8 +96,19 @@
         @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1.5); } }
 
         #menu-layer { position: absolute; top:0; left:0; width: 100%; height: 100%; background: transparent; z-index: 50; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .menu-card { background: linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.94)); padding: 30px; border-radius: 30px; border: 4px solid rgba(255,71,126,0.8); box-shadow: 0 20px 50px rgba(12, 38, 78, 0.32), 0 0 0 6px rgba(255,255,255,0.14); text-align: center; max-width: 420px; width: 90%; backdrop-filter: blur(12px); }
-        .logo { font-size: 55px; font-weight: 900; color: rgba(255,255,255,0.94); -webkit-text-stroke: 2px #ff477e; text-shadow: 0 10px 24px rgba(255, 71, 126, 0.5), 0 0 18px rgba(255,255,255,0.9); margin-bottom: 5px; text-align: center; line-height: 1.08; font-family: 'Comic Sans MS', cursive, sans-serif; }
+        .menu-card { position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(9,18,48,.88), rgba(28,31,75,.78) 48%, rgba(255,255,255,.9) 48.2%, rgba(255,255,255,.96)); padding: 26px; border-radius: 28px; border: 2px solid rgba(255,255,255,.75); box-shadow: 0 28px 70px rgba(5,15,45,.42), 0 0 0 6px rgba(255,255,255,.12); text-align: left; max-width: 860px; width: min(94%, 860px); backdrop-filter: blur(18px); display: grid; grid-template-columns: .9fr 1.1fr; gap: 24px; }
+        .menu-card::before { content: ''; position: absolute; width: 260px; height: 260px; left: -100px; top: -120px; border-radius: 50%; background: rgba(126,249,255,.12); filter: blur(8px); pointer-events: none; }
+        .menu-brand { position: relative; z-index: 1; display: flex; flex-direction: column; justify-content: center; min-height: 400px; color: #fff; }
+        .eyebrow { color: #7ef9ff; font-size: 11px; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; margin-bottom: 12px; }
+        .logo { font-size: clamp(42px, 6vw, 72px); font-weight: 950; color: #fff; -webkit-text-stroke: 1px rgba(126,249,255,.8); text-shadow: 0 10px 24px rgba(126,249,255,.2), 0 0 28px rgba(255,71,126,.55); margin-bottom: 10px; line-height: .92; font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif; letter-spacing: .02em; }
+        .brand-subtitle { max-width: 280px; color: rgba(255,255,255,.68); font-size: 14px; line-height: 1.5; font-weight: 700; }
+        .lobby-stats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 22px; }
+        .lobby-stat { border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.08); border-radius: 10px; padding: 8px 10px; color: #fff; font-size: 10px; font-weight: 900; }
+        .menu-main { position: relative; z-index: 1; min-width: 0; }
+        .player-input { width: 100%; border: 2px solid rgba(34,50,95,.14); border-radius: 14px; padding: 13px 14px; font: inherit; font-weight: 800; color: #263354; outline: none; background: rgba(255,255,255,.82); }
+        .player-input:focus { border-color: #ff477e; box-shadow: 0 0 0 4px rgba(255,71,126,.12); }
+        .input-label { display: block; color: #59657b; font-size: 10px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 7px 3px; }
+        .play-btn { background: linear-gradient(135deg, #ff5f96, #ff477e 50%, #7c5cff 100%); color: white; border: none; padding: 15px 40px; font-size: 22px; font-weight: 950; border-radius: 15px; cursor: pointer; box-shadow: 0 12px 30px rgba(255, 71, 126, 0.38); transition: transform 0.2s ease, box-shadow 0.2s ease; margin-top: 15px; width: 100%; }
         .play-btn { background: linear-gradient(135deg, #ff5f96, #ff477e 50%, #ff2d7d 100%); color: white; border: none; padding: 15px 40px; font-size: 24px; font-weight: 900; border-radius: 30px; cursor: pointer; box-shadow: 0 10px 30px rgba(255, 71, 126, 0.45), inset 0 2px 8px rgba(255,255,255,0.2); transition: transform 0.2s ease, box-shadow 0.2s ease; margin-top: 15px; width: 100%; }
         .play-btn:hover { transform: translateY(-2px) scale(1.03); box-shadow: 0 16px 35px rgba(255, 71, 126, 0.6); }
         .stats { color: #48556a; margin-top: 15px; font-size: 16px; font-weight: 700; background: linear-gradient(180deg, #ffffff, #f6f7ff); padding: 12px; border-radius: 15px; border: 2px dashed rgba(255,71,126,0.32); box-shadow: inset 0 1px 0 rgba(255,255,255,0.8); }
@@ -124,7 +135,8 @@
         .mode-btn small { display: block; margin-top: 3px; opacity: .78; font-size: 8px; }
         .hidden { display: none !important; }
 
-        @media (min-width: 768px) { #dash-btn { width: 110px; height: 110px; font-size: 22px; } .logo { font-size: 70px; } }
+        @media (max-width: 680px) { .menu-card { grid-template-columns: 1fr; gap: 12px; padding: 18px; max-height: 94vh; overflow-y: auto; } .menu-brand { min-height: 0; padding: 10px 4px 4px; } .brand-subtitle { max-width: 100%; } .lobby-stats { margin-top: 12px; } }
+        @media (min-width: 768px) { #dash-btn { width: 110px; height: 110px; font-size: 22px; } }
     </style>
 
     <script type="importmap">
@@ -188,36 +200,47 @@
     <!-- ANA MENÜ -->
     <div id="menu-layer">
         <div class="menu-card">
-            <div class="logo">SNAKE.IO 3D<br><span style="font-size: 30px; color:#ffcc5c; -webkit-text-stroke: 1px #d49a2a;">CANDY RUSH</span></div>
-            <p style="color:#666; margin-bottom: 15px; font-weight: bold;">Rakiplerini ye, combo kur, viral ol, kral ol!</p>
-            <div id="game-over-stats" class="hidden stats">
-                Son Skor: <span id="final-score">0</span><br>
-                En Yüksek: <span id="best-score">0</span>
+            <div class="menu-brand">
+                <div class="eyebrow">LIVE ARENA · SEASON 01</div>
+                <div class="logo">SNAKE<br><span style="color:#ffd166;">RUSH</span></div>
+                <div class="brand-subtitle">Büyü. Rakiplerini kuşat. Arena liderliğini ele geçir.</div>
+                <div class="lobby-stats">
+                    <div class="lobby-stat">⚡ <span id="lobby-level">LV 1</span></div>
+                    <div class="lobby-stat">🏆 <span id="lobby-rank">BRONZ</span></div>
+                    <div class="lobby-stat">👑 <span id="lobby-best">0</span></div>
+                </div>
             </div>
-            <div class="mission-strip">
-                <h4>Bugün Hedefler</h4>
-                <div class="task"><span>💎 300 Skor</span><span id="task-1">0/300</span></div>
-                <div class="task"><span>⚡ 3 Dash</span><span id="task-2">0/3</span></div>
-                <div class="task"><span>🔥 Combo x5</span><span id="task-3">0/5</span></div>
+            <div class="menu-main">
+                <div id="game-over-stats" class="hidden stats">
+                    Son Skor: <span id="final-score">0</span><br>
+                    En Yüksek: <span id="best-score">0</span>
+                </div>
+                <label class="input-label" for="player-name">Oyuncu adı</label>
+                <input class="player-input" id="player-name" maxlength="16" autocomplete="nickname" placeholder="Arena adını yaz..." value="Oyuncu">
+                <div class="mode-panel" id="mode-panel">
+                    <button class="mode-btn selected" data-mode="classic">KLASİK<small>Serbest arena</small></button>
+                    <button class="mode-btn" data-mode="boss">BOSS RUSH<small>Titan hemen gelir</small></button>
+                    <button class="mode-btn" data-mode="time">TIME ATTACK<small>90 saniye</small></button>
+                </div>
+                <div class="collection-panel">
+                    <div class="collection-title"><span>Yılanını seç</span><span id="collection-count">1/8</span></div>
+                    <div class="skin-grid" id="skin-grid"></div>
+                    <div class="achievement-line" id="achievement-line">🏆 İlk avını yap ve koleksiyonunu büyüt.</div>
+                </div>
+                <div class="mission-strip">
+                    <h4>Bugünün hedefleri</h4>
+                    <div class="task"><span>💎 300 Skor</span><span id="task-1">0/300</span></div>
+                    <div class="task"><span>⚡ 3 Dash</span><span id="task-2">0/3</span></div>
+                    <div class="task"><span>🔥 Combo x5</span><span id="task-3">0/5</span></div>
+                </div>
+                <div class="stats" style="margin-top:12px;">Seviye <span id="profile-level">1</span> · Toplam XP <span id="profile-xp">0</span></div>
+                <div class="rank-strip"><span>SEZON RÜTBESİ<br><strong id="profile-rank">Bronz</strong></span><span id="profile-rating">100 RP</span></div>
+                <button class="play-btn" id="start-btn">ARENAME GİR <span style="font-size:16px;">➜</span></button>
+                <div class="quick-row">
+                    <button class="mini-btn" id="challenge-btn">HEDEFLER</button>
+                    <button class="mini-btn alt" id="share-btn">PAYLAŞ</button>
+                </div>
             </div>
-            <div class="stats" style="margin-top:12px;">Seviye <span id="profile-level">1</span> · Toplam XP <span id="profile-xp">0</span></div>
-            <div class="rank-strip"><span>SEZON RÜTBESİ<br><strong id="profile-rank">Bronz</strong></span><span id="profile-rating">100 RP</span></div>
-            <div class="mode-panel" id="mode-panel">
-                <button class="mode-btn selected" data-mode="classic">KLASİK<small>Serbest arena</small></button>
-                <button class="mode-btn" data-mode="boss">BOSS RUSH<small>Titan hemen gelir</small></button>
-                <button class="mode-btn" data-mode="time">TIME ATTACK<small>90 saniye</small></button>
-            </div>
-            <div class="collection-panel">
-                <div class="collection-title"><span>Skin Koleksiyonu</span><span id="collection-count">1/8</span></div>
-                <div class="skin-grid" id="skin-grid"></div>
-                <div class="achievement-line" id="achievement-line">🏆 İlk avını yap ve koleksiyonunu büyüt.</div>
-            </div>
-            <div class="quick-row">
-                <button class="mini-btn" id="challenge-btn">HEDEFİ GÖR</button>
-                <button class="mini-btn alt" id="share-btn">PAYLAŞ</button>
-            </div>
-            <button class="play-btn" id="start-btn">HEMEN OYNA</button>
-            <p style="color:#aaa; font-size: 13px; margin-top:15px;">Mobilde ekrandaki joystick ile yön ver, DASH ile hızlan, combo kur!</p>
         </div>
     </div>
 
@@ -236,6 +259,7 @@
         playerStats.achievements = Array.isArray(playerStats.achievements) ? playerStats.achievements : [];
         playerStats.bestLength = Number(playerStats.bestLength || 0);
         playerStats.selectedMode = playerStats.selectedMode || 'classic';
+        playerStats.playerName = String(playerStats.playerName || 'Oyuncu').slice(0, 16);
         const cosmetics = [
             { id: 'classic', name: 'Candy', color: 0xff477e, glow: 0xff8fab, level: 1 },
             { id: 'ocean', name: 'Ocean', color: 0x22d3ee, glow: 0x7ef9ff, level: 2 },
@@ -662,6 +686,17 @@
             document.querySelectorAll('[data-mode]').forEach(button => {
                 button.classList.toggle('selected', button.dataset.mode === playerStats.selectedMode);
             });
+        }
+
+        function updateLobbyUI() {
+            const nameInput = document.getElementById('player-name');
+            const level = document.getElementById('lobby-level');
+            const rank = document.getElementById('lobby-rank');
+            const best = document.getElementById('lobby-best');
+            if (nameInput && document.activeElement !== nameInput) nameInput.value = playerStats.playerName;
+            if (level) level.textContent = `LV ${playerStats.level}`;
+            if (rank) rank.textContent = (document.getElementById('profile-rank')?.textContent || 'BRONZ').toUpperCase();
+            if (best) best.textContent = bestScore;
         }
 
         function unlockAchievement(id, label) {
@@ -1328,6 +1363,7 @@
             document.getElementById('final-score').innerText = playerSnake.score;
             document.getElementById('best-score').innerText = bestScore;
             updateProfileUI();
+            updateLobbyUI();
         }
 
         function applyPowerUpEffect(type) {
@@ -1381,7 +1417,7 @@
             document.getElementById('ui-layer').classList.remove('hidden');
             document.getElementById('feature-banner').textContent = playerStats.selectedMode === 'boss' ? 'BOSS RUSH ACTIVE' : playerStats.selectedMode === 'time' ? 'TIME ATTACK · 90s' : 'CLASSIC ARENA';
             
-            playerSnake = new Snake(true, "Sen", new THREE.Vector3(0,0,0), 0xff477e);
+            playerSnake = new Snake(true, playerStats.playerName || 'Oyuncu', new THREE.Vector3(0,0,0), 0xff477e);
             updatePlayerScore();
             
             const botCount = isMobile ? 6 : 8;
@@ -1394,6 +1430,12 @@
         }
 
         document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('player-name').addEventListener('input', (event) => {
+            const value = event.target.value.replace(/[^a-zA-Z0-9 _-]/g, '').slice(0, 16).trim();
+            event.target.value = value;
+            playerStats.playerName = value || 'Oyuncu';
+            savePlayerStats();
+        });
         document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => {
             playerStats.selectedMode = button.dataset.mode;
             savePlayerStats();
@@ -1401,6 +1443,7 @@
         }));
         updateProfileUI();
         updateModeUI();
+        updateLobbyUI();
 
         document.getElementById('challenge-btn').addEventListener('click', () => {
             if (playerSnake && !playerSnake.isDead) {
