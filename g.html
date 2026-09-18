@@ -361,14 +361,14 @@
             { id: 'deep', name: 'Derin grid', preview: 'deep', ground: 0x123f78, line: 0xffffff, opacity: 0.72, divisions: 78 }
         ];
         const cosmetics = [
-            { id: 'classic', name: 'Candy', color: 0xff477e, glow: 0xff8fab, price: 0 },
-            { id: 'ocean', name: 'Ocean', color: 0x22d3ee, glow: 0x7ef9ff, price: 80 },
-            { id: 'royal', name: 'Royal', color: 0x8b5cf6, glow: 0xc4b5fd, price: 140 },
-            { id: 'sunset', name: 'Sunset', color: 0xff8a65, glow: 0xffd166, price: 220 },
-            { id: 'toxic', name: 'Toxic', color: 0x84cc16, glow: 0xd9f99d, price: 320 },
-            { id: 'cosmic', name: 'Cosmic', color: 0x2563eb, glow: 0xa78bfa, price: 450 },
-            { id: 'gold', name: 'Gold', color: 0xf59e0b, glow: 0xfff3a3, price: 650 },
-            { id: 'titan', name: 'Titan', color: 0xef4444, glow: 0xffd166, price: 900 }
+            { id: 'classic', name: 'Candy', color: 0xff477e, glow: 0xff8fab, price: 0, shape: 'capsule' },
+            { id: 'ocean', name: 'Ocean', color: 0x22d3ee, glow: 0x7ef9ff, price: 80, shape: 'crystal' },
+            { id: 'royal', name: 'Royal', color: 0x8b5cf6, glow: 0xc4b5fd, price: 140, shape: 'capsule' },
+            { id: 'sunset', name: 'Sunset', color: 0xff8a65, glow: 0xffd166, price: 220, shape: 'robot' },
+            { id: 'toxic', name: 'Toxic', color: 0x84cc16, glow: 0xd9f99d, price: 320, shape: 'crystal' },
+            { id: 'cosmic', name: 'Cosmic', color: 0x2563eb, glow: 0xa78bfa, price: 450, shape: 'orb' },
+            { id: 'gold', name: 'Gold', color: 0xf59e0b, glow: 0xfff3a3, price: 650, shape: 'robot' },
+            { id: 'titan', name: 'Titan', color: 0xef4444, glow: 0xffd166, price: 900, shape: 'titan' }
         ];
         const accessories = [
             { id: 'none', name: 'Yok', icon: '—', price: 0 },
@@ -416,8 +416,32 @@
             { sky: '#74c8ff', fog: '#9ad9ff', ground: '#c9f4b8', accent: '#ff477e' },
             { sky: '#7f7fd5', fog: '#c0c0ff', ground: '#dff7b8', accent: '#ff7af5' },
             { sky: '#0f172a', fog: '#1e293b', ground: '#3a4d6f', accent: '#ffd166' },
-            { sky: '#0b3b3e', fog: '#0f766e', ground: '#8fe1a4', accent: '#7dd3fc' }
+            { sky: '#0b3b3e', fog: '#0f766e', ground: '#8fe1a4', accent: '#7dd3fc' },
+            { sky: '#180b3a', fog: '#32145e', ground: '#102e67', accent: '#a78bfa' },
+            { sky: '#35120b', fog: '#6b2714', ground: '#123b68', accent: '#fb923c' }
         ];
+        let audioContext = null;
+        function playSfx(kind) {
+            if (!audioContext) return;
+            const settings = {
+                gold: [660, 0.07, 'sine'],
+                dash: [180, 0.1, 'sawtooth'],
+                kill: [90, 0.22, 'square'],
+                boss: [110, 0.38, 'triangle'],
+                power: [440, 0.16, 'sine']
+            }[kind];
+            if (!settings) return;
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            oscillator.type = settings[2];
+            oscillator.frequency.setValueAtTime(settings[0], audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(settings[0] * 1.8, audioContext.currentTime + settings[1]);
+            gain.gain.setValueAtTime(0.045, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + settings[1]);
+            oscillator.connect(gain).connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + settings[1]);
+        }
         
         const scene = new THREE.Scene();
         scene.background = new THREE.Color('#74c8ff');
@@ -574,6 +598,13 @@
         bodyGeoGlobal.rotateX(Math.PI / 2);
         
         const headGeoGlobal = new THREE.SphereGeometry(1.9, 28, 28);
+        const snakeShapes = {
+            capsule: { body: bodyGeoGlobal, head: headGeoGlobal },
+            crystal: { body: new THREE.OctahedronGeometry(1.65, 1), head: new THREE.IcosahedronGeometry(2.05, 1) },
+            robot: { body: new THREE.BoxGeometry(2.8, 2.8, 3.8, 2, 2, 2), head: new THREE.BoxGeometry(3.6, 3.6, 3.6, 2, 2, 2) },
+            orb: { body: new THREE.SphereGeometry(1.75, 16, 16), head: new THREE.SphereGeometry(2.1, 24, 24) },
+            titan: { body: new THREE.DodecahedronGeometry(1.75, 1), head: new THREE.DodecahedronGeometry(2.2, 1) }
+        };
         const eyeGeoGlobal = new THREE.SphereGeometry(0.45, 12, 12);
         const pupilGeoGlobal = new THREE.SphereGeometry(0.2, 12, 12);
         
@@ -638,6 +669,7 @@
             void document.getElementById('cinematic-flash').offsetWidth;
             document.getElementById('cinematic-flash').classList.add('active');
             triggerScreenShake(4);
+            playSfx('boss');
             triggerViralBurst(bossEvent.position, '👑 CANDY TITAN!', '#ffd166');
         }
 
@@ -811,6 +843,7 @@
             cinematicFocus.copy(position);
             cinematicTimer = .55;
             triggerScreenShake(7);
+            playSfx('kill');
             const label = document.getElementById('cinematic-label');
             if (label) {
                 label.textContent = title;
@@ -881,6 +914,7 @@
             playerStats.gold += gain;
             savePlayerStats();
             if (position) createFloatingText(`+${gain} 🪙`, position, '#ffd166');
+            playSfx('gold');
             updateWalletUI();
         }
 
@@ -1059,6 +1093,7 @@
                 const cosmetic = isPlayer ? getCurrentCosmetic() : null;
                 this.colorHex = cosmetic ? cosmetic.color : colorHex;
                 const glowColor = cosmetic ? cosmetic.glow : colorHex;
+                const silhouette = snakeShapes[cosmetic ? cosmetic.shape : 'capsule'] || snakeShapes.capsule;
                 this.isDead = false;
                 
                 this.score = isPlayer ? 0 : Math.floor(Math.random() * 300) + 50;
@@ -1091,7 +1126,7 @@
                 });
                 this.matColor = matColor;
 
-                this.head = new THREE.Mesh(headGeoGlobal, matColor);
+                this.head = new THREE.Mesh(silhouette.head, matColor);
                 this.head.position.copy(startPos);
                 this.head.position.y = 1.8;
                 scene.add(this.head);
@@ -1155,7 +1190,7 @@
             }
 
             addBodyPart(isInit = false) {
-                const part = new THREE.Mesh(bodyGeoGlobal, this.matColor.clone());
+                const part = new THREE.Mesh((this.isPlayer ? (snakeShapes[getCurrentCosmetic().shape] || snakeShapes.capsule).body : bodyGeoGlobal), this.matColor.clone());
                 part.position.copy(this.head.position);
                 part.material.emissiveIntensity = 0.9;
                 part.material.clearcoat = 1;
@@ -1522,6 +1557,7 @@
             e.preventDefault();
             if (playerSnake) {
                 haptic(14);
+                playSfx('dash');
                 playerSnake.isBoosting = true;
                 challengeProgress.dashCurrent = Math.min(challengeProgress.dashTarget, challengeProgress.dashCurrent + 1);
                 playerStats.dashCount = (playerStats.dashCount || 0) + 1;
@@ -1761,6 +1797,7 @@
 
         function applyPowerUpEffect(type) {
             if (!playerSnake || playerSnake.isDead) return;
+            playSfx('power');
             if (type === 'shield') {
                 haptic(18);
                 playerSnake.shield = 8;
@@ -1778,6 +1815,8 @@
         }
 
         function startGame() {
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioContext.state === 'suspended') audioContext.resume();
             comboTicker = 1;
             lastFoodTime = 0;
             viralMeter = 0;
