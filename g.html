@@ -360,7 +360,7 @@
         );
         scene.add(sceneGlow);
 
-        const mapSize = 400; 
+        const mapSize = 720;
         const groundGeo = new THREE.PlaneGeometry(mapSize, mapSize);
         const groundMat = new THREE.MeshStandardMaterial({ color: '#c9f4b8', roughness: 0.9, metalness: 0.08, emissive: 0x5ec79d, emissiveIntensity: 0.18 });
         const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -1773,8 +1773,10 @@
                     camera.fov += (targetFov - camera.fov) * 0.1;
                     camera.updateProjectionMatrix();
 
-                    const camDist = 55;
-                    const camHeight = 86;
+                    const growthRatio = Math.max(0, playerSnake.parts.length - 35) / 180;
+                    const zoomRatio = Math.min(1, growthRatio);
+                    const camDist = 55 + zoomRatio * 42;
+                    const camHeight = 86 + zoomRatio * 58;
                     const targetCamX = playerSnake.head.position.x;
                     const targetCamZ = playerSnake.head.position.z + camDist;
                     cameraPositionTarget.set(targetCamX, camHeight, targetCamZ);
