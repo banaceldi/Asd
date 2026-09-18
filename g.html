@@ -146,6 +146,65 @@
             #dash-btn { width: 68px; height: 68px; font-size: 10px; }
         }
 
+        /* Compact lobby: one clear action, then the player's identity and cosmetics. */
+        #menu-layer { padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); overflow: auto; }
+        .menu-card { width: min(100%, 920px); max-height: min(760px, 94svh); padding: 18px; border-radius: 22px; grid-template-columns: minmax(230px, .72fr) minmax(0, 1.28fr); gap: 16px; background: linear-gradient(135deg, rgba(8,18,43,.96), rgba(19,38,79,.94) 43%, rgba(241,248,255,.98) 43.2%); }
+        .menu-brand { min-height: 0; padding: 12px; justify-content: flex-start; }
+        .eyebrow { font-size: 9px; margin-bottom: 10px; }
+        .logo { font-size: clamp(42px, 6vw, 66px); margin-bottom: 8px; }
+        .brand-subtitle { font-size: 12px; max-width: 225px; }
+        .lobby-stats { margin-top: auto; padding-top: 18px; gap: 6px; }
+        .lobby-stat { font-size: 9px; padding: 7px 8px; }
+        .menu-main { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-content: start; min-height: 0; overflow: auto; padding: 2px; }
+        .menu-main > .wallet, .menu-main > #game-over-stats, .menu-main > .input-label, .menu-main > .player-input, .menu-main > .play-btn, .menu-main > .quick-row { grid-column: 1 / -1; }
+        .menu-main > .wallet { justify-self: end; margin-bottom: -2px; }
+        .player-input { padding: 10px 12px; border-radius: 11px; }
+        .mode-panel { margin-top: 0; }
+        .collection-panel, .shop-panel, .floor-panel, .mission-strip, .stats, .rank-strip { margin-top: 0 !important; }
+        .collection-panel, .shop-panel, .floor-panel, .mission-strip { padding: 8px; border-radius: 12px; }
+        .collection-panel { grid-column: 1 / -1; }
+        .shop-panel, .floor-panel { min-width: 0; }
+        .mission-strip { grid-column: 1 / -1; }
+        .skin-grid, .shop-grid { gap: 5px; }
+        .skin-card { padding: 5px 2px; border-radius: 9px; }
+        .skin-swatch { width: 21px; height: 21px; }
+        .floor-preview { height: 28px; }
+        .stats { padding: 8px; font-size: 12px; }
+        .stats span { font-size: 17px; }
+        .rank-strip { padding: 8px 10px; }
+        .play-btn { margin-top: 2px; padding: 12px 20px; border-radius: 12px; font-size: 18px; }
+        .quick-row { margin-top: 0; gap: 7px; }
+        .mini-btn { padding: 9px 8px; border-radius: 10px; font-size: 11px; }
+
+        @media (max-width: 680px) {
+            #menu-layer { align-items: stretch; justify-content: center; padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left)); }
+            .menu-card { width: 100%; max-height: calc(100svh - 12px); grid-template-columns: 1fr; gap: 6px; padding: 12px; border-radius: 18px; background: linear-gradient(180deg, rgba(8,18,43,.97) 0 28%, rgba(241,248,255,.98) 28.2%); }
+            .menu-brand { padding: 5px 6px 8px; }
+            .eyebrow { margin-bottom: 5px; }
+            .logo { font-size: 38px; line-height: .85; }
+            .brand-subtitle { font-size: 11px; max-width: 100%; }
+            .lobby-stats { margin-top: 8px; padding-top: 0; }
+            .menu-main { grid-template-columns: 1fr 1fr; gap: 6px; overflow: visible; padding: 0; }
+            .menu-main > .wallet { font-size: 11px; }
+            .menu-main > .input-label { margin-bottom: -3px; }
+            .mode-panel { grid-column: 1 / -1; }
+            .mode-btn { padding: 6px 3px; font-size: 8px; }
+            .mode-btn small { font-size: 7px; }
+            .mission-strip { display: none; }
+            .achievement-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        }
+
+        @media (max-width: 680px) and (orientation: landscape) {
+            .menu-card { grid-template-columns: .65fr 1.35fr; max-height: calc(100svh - 8px); padding: 10px; background: linear-gradient(135deg, rgba(8,18,43,.97), rgba(19,38,79,.94) 39%, rgba(241,248,255,.98) 39.2%); }
+            .menu-brand { padding: 5px; }
+            .logo { font-size: 34px; }
+            .brand-subtitle { font-size: 10px; }
+            .lobby-stats { margin-top: 10px; }
+            .menu-main { max-height: calc(100svh - 28px); }
+            .collection-panel { grid-column: 1 / -1; }
+            .mission-strip { display: none; }
+        }
+
         .floating-text { position: absolute; font-weight: 900; font-size: 26px; -webkit-text-stroke: 1px #fff; pointer-events: none; transform: translate(-50%, -50%); animation: floatUp 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards; z-index: 5; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
         @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -150%) scale(1.5); } }
 
@@ -216,6 +275,47 @@
 
         @media (max-width: 680px) { .menu-card { grid-template-columns: 1fr; gap: 12px; padding: 18px; max-height: 94vh; overflow-y: auto; } .menu-brand { min-height: 0; padding: 10px 4px 4px; } .brand-subtitle { max-width: 100%; } .lobby-stats { margin-top: 12px; } }
         @media (min-width: 768px) { #dash-btn { width: 110px; height: 110px; font-size: 22px; } }
+
+        /* Final lobby cascade override */
+        #menu-layer { padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); overflow: auto; }
+        .menu-card { width: min(100%, 920px); max-height: min(760px, 94svh); padding: 18px; border-radius: 22px; gap: 16px; grid-template-columns: minmax(230px, .72fr) minmax(0, 1.28fr); background: linear-gradient(135deg, rgba(8,18,43,.96), rgba(19,38,79,.94) 43%, rgba(241,248,255,.98) 43.2%); }
+        .menu-brand { min-height: 0; padding: 12px; justify-content: flex-start; }
+        .logo { font-size: clamp(42px, 6vw, 66px); line-height: .92; }
+        .menu-main { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-content: start; min-height: 0; overflow: auto; padding: 2px; }
+        .menu-main > .wallet, .menu-main > #game-over-stats, .menu-main > .input-label, .menu-main > .player-input, .menu-main > .play-btn, .menu-main > .quick-row { grid-column: 1 / -1; }
+        .menu-main > .wallet { justify-self: end; margin-bottom: -2px; }
+        .mode-panel { margin-top: 0; }
+        .collection-panel { grid-column: 1 / -1; margin-top: 0; }
+        .shop-panel, .floor-panel, .mission-strip, .stats, .rank-strip { margin-top: 0; }
+        .shop-panel, .floor-panel, .mission-strip, .collection-panel { padding: 8px; border-radius: 12px; }
+        .mission-strip { grid-column: 1 / -1; }
+        .play-btn { margin-top: 2px; padding: 12px 20px; border-radius: 12px; font-size: 18px; }
+        .quick-row { margin-top: 0; gap: 7px; }
+        .mini-btn { padding: 9px 8px; border-radius: 10px; font-size: 11px; }
+
+        @media (max-width: 680px) {
+            #menu-layer { align-items: stretch; justify-content: center; padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left)); }
+            .menu-card { width: 100%; max-height: calc(100svh - 12px); grid-template-columns: 1fr; gap: 6px; padding: 12px; border-radius: 18px; background: linear-gradient(180deg, rgba(8,18,43,.97) 0 28%, rgba(241,248,255,.98) 28.2%); }
+            .menu-brand { padding: 5px 6px 8px; }
+            .logo { font-size: 38px; line-height: .85; }
+            .brand-subtitle { font-size: 11px; max-width: 100%; }
+            .lobby-stats { margin-top: 8px; padding-top: 0; }
+            .menu-main { grid-template-columns: 1fr 1fr; gap: 6px; overflow: visible; padding: 0; }
+            .menu-main > .wallet { font-size: 11px; }
+            .mode-panel { grid-column: 1 / -1; }
+            .mode-btn { padding: 6px 3px; font-size: 8px; }
+            .mode-btn small { font-size: 7px; }
+            .mission-strip { display: none; }
+            .achievement-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        }
+
+        @media (max-width: 680px) and (orientation: landscape) {
+            .menu-card { grid-template-columns: .65fr 1.35fr; max-height: calc(100svh - 8px); padding: 10px; background: linear-gradient(135deg, rgba(8,18,43,.97), rgba(19,38,79,.94) 39%, rgba(241,248,255,.98) 39.2%); }
+            .menu-brand { padding: 5px; }
+            .logo { font-size: 34px; }
+            .brand-subtitle { font-size: 10px; }
+            .menu-main { max-height: calc(100svh - 28px); }
+        }
     </style>
 
     <script type="importmap">
