@@ -52,6 +52,14 @@
         .feature-badges { position: absolute; top: 56px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; max-width: min(90vw, 760px); z-index: 20; }
         .status-pill { background: rgba(3, 7, 18, 0.48); border: 1px solid rgba(255,255,255,0.45); color: #fff; border-radius: 999px; padding: 5px 10px; font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; box-shadow: inset 0 1px 0 rgba(255,255,255,0.2); }
         #vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle at center, transparent 45%, rgba(3, 6, 15, 0.46) 100%); z-index: 15; }
+        .boss-event { position: absolute; top: 96px; left: 50%; transform: translateX(-50%); width: min(340px, 78vw); padding: 8px 12px; border-radius: 14px; background: rgba(10, 8, 28, 0.76); border: 2px solid rgba(255, 210, 92, 0.8); color: #fff; text-align: center; box-shadow: 0 0 30px rgba(255, 71, 126, 0.5); }
+        .boss-event strong { display: block; color: #ffd166; font-size: 12px; letter-spacing: .12em; }
+        .boss-event small { display: block; margin-top: 4px; color: rgba(255,255,255,.8); font-size: 10px; }
+        .boss-track { height: 7px; margin-top: 7px; border-radius: 999px; overflow: hidden; background: rgba(255,255,255,.15); }
+        .boss-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff477e, #ffd166, #7ef9ff); transition: width .15s linear; }
+        .cinematic-flash { position: absolute; inset: 0; background: rgba(255, 209, 102, 0.35); opacity: 0; pointer-events: none; z-index: 14; }
+        .cinematic-flash.active { animation: cinematicFlash .55s ease-out; }
+        @keyframes cinematicFlash { 0% { opacity: .8; } 100% { opacity: 0; } }
 
         .combo-hud { position: absolute; left: 50%; top: 18px; transform: translateX(-50%); background: rgba(18, 24, 52, 0.72); border: 2px solid rgba(255,255,255,0.5); border-radius: 999px; padding: 8px 18px; color: white; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; box-shadow: 0 0 22px rgba(63, 152, 255, 0.35); z-index: 11; display: none; }
         .combo-hud.show { display: block; animation: comboPulse 0.5s ease; }
@@ -118,6 +126,12 @@
         <div class="feature-banner" id="feature-banner">10 Premium Upgrades Active</div>
         <div class="feature-badges" id="feature-badges"></div>
         <div id="vignette"></div>
+        <div class="cinematic-flash" id="cinematic-flash"></div>
+        <div class="boss-event hidden" id="boss-event">
+            <strong>👑 CANDY TITAN EVENT</strong>
+            <small id="boss-status">Boost ile çekirdeğe yaklaş ve ödülü kap!</small>
+            <div class="boss-track"><div class="boss-fill" id="boss-fill"></div></div>
+        </div>
         <div class="top-bar">
             <div class="left-hud">
                 <div class="score-box" id="score-display">Skor: 0</div>
@@ -204,6 +218,8 @@
         let lastSparklePulse = 0;
         let viralMeter = 0;
         let premiumTicker = 0;
+        let arenaEventTimer = 18;
+        let bossEvent = null;
         const premiumUpgrades = [
             'Neon Glow', 'Boss Crown', 'Ultra Shadow', 'Combo Burst', 'Ghost Trail', 'Arena Pulse',
             'Magnet Bloom', 'Sky Spark', 'Cinematic Rush', 'Viral Mode'
@@ -335,6 +351,85 @@
         const superFoodMat = new THREE.MeshBasicMaterial({ color: 0xff477e });
         const magnetMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
 
+        function createBossEvent() {
+            const group = new THREE.Group();
+            const core = new THREE.Mesh(
+                new THREE.IcosahedronGeometry(5.5, 2),
+                new THREE.MeshPhysicalMaterial({ color: 0xff477e, emissive: 0xff164f, emissiveIntensity: 1.8, metalness: .55, roughness: .16, clearcoat: 1 })
+            );
+            const aura = new THREE.Mesh(
+                new THREE.SphereGeometry(8, 24, 24),
+                new THREE.MeshBasicMaterial({ color: 0xff477e, transparent: true, opacity: .16, side: THREE.BackSide })
+            );
+            const ring = new THREE.Mesh(
+                new THREE.TorusGeometry(10, .42, 12, 72),
+                new THREE.MeshBasicMaterial({ color: 0xffd166, transparent: true, opacity: .88 })
+            );
+            const ringTwo = ring.clone();
+            ringTwo.material = ring.material.clone();
+            ringTwo.material.color.setHex(0x7ef9ff);
+            ringTwo.rotation.x = Math.PI / 2;
+            const crown = new THREE.Mesh(crownGeo, crownMat);
+            crown.scale.setScalar(1.9);
+            crown.position.y = 8;
+            group.add(core, aura, ring, ringTwo, crown);
+            group.userData = { core, aura, ring, ringTwo, crown, health: 100, time: 14 };
+            const point = new THREE.PointLight(0xff477e, 150, 80, 2);
+            group.add(point);
+            scene.add(group);
+            return group;
+        }
+
+        function startBossEvent() {
+            if (bossEvent || GAME_STATE !== 'PLAYING') return;
+            bossEvent = createBossEvent();
+            bossEvent.position.set((Math.random() - .5) * 160, 6, (Math.random() - .5) * 160);
+            const event = bossEvent.userData;
+            spawnFood(8, 'super', bossEvent.position);
+            document.getElementById('boss-event').classList.remove('hidden');
+            document.getElementById('boss-status').textContent = 'DASH ile çekirdeğe saldır, dev ödülü al!';
+            document.getElementById('cinematic-flash').classList.remove('active');
+            void document.getElementById('cinematic-flash').offsetWidth;
+            document.getElementById('cinematic-flash').classList.add('active');
+            triggerScreenShake(4);
+            triggerViralBurst(bossEvent.position, '👑 CANDY TITAN!', '#ffd166');
+        }
+
+        function endBossEvent(won = false) {
+            if (!bossEvent) return;
+            const pos = bossEvent.position.clone();
+            spawnParticleBurst(pos, won ? 0x7ef9ff : 0xff477e, isMobile ? 28 : 44, 5);
+            scene.remove(bossEvent);
+            bossEvent = null;
+            document.getElementById('boss-event').classList.add('hidden');
+            arenaEventTimer = 28;
+            if (won && playerSnake && !playerSnake.isDead) {
+                playerSnake.score += 250;
+                playerStats.xp += 100;
+                viralMeter = Math.min(100, viralMeter + 45);
+                updatePlayerScore();
+                updateViralMeter();
+                triggerViralBurst(pos, '🏆 TITAN ÖDÜLÜ +250!', '#7ef9ff');
+            }
+        }
+
+        function updateBossEvent(delta, time) {
+            if (!bossEvent || !playerSnake || playerSnake.isDead) return;
+            const event = bossEvent.userData;
+            event.time -= delta;
+            event.ring.rotation.z += delta * 1.5;
+            event.ringTwo.rotation.y -= delta * 1.9;
+            event.core.rotation.x += delta * 1.8;
+            event.core.rotation.y += delta * 2.2;
+            event.aura.scale.setScalar(1 + Math.sin(time * 4) * .08);
+            const distance = playerSnake.head.position.distanceTo(bossEvent.position);
+            if (distance < 22 && playerSnake.isBoosting) event.health = Math.max(0, event.health - delta * 18);
+            document.getElementById('boss-fill').style.width = `${event.health}%`;
+            document.getElementById('boss-status').textContent = distance < 22 ? '⚡ Vuruş başarılı! Boost ile devam et!' : 'Haritada parlayan tacı bul ve saldır!';
+            if (event.health <= 0) endBossEvent(true);
+            else if (event.time <= 0) endBossEvent(false);
+        }
+
         function spawnFood(count = 1, type = 'normal', pos = null) {
             for(let i=0; i<count; i++) {
                 let mesh, val, fType = type;
@@ -403,6 +498,9 @@
         }
 
         function spawnParticleBurst(position, color, count = 16, spread = 2.2) {
+            const particleBudget = isMobile ? 260 : 420;
+            const available = Math.max(0, particleBudget - particles.length);
+            count = Math.min(count, available);
             for (let i = 0; i < count; i++) {
                 const p = new THREE.Mesh(
                     new THREE.SphereGeometry(0.28, 8, 8),
@@ -1113,6 +1211,11 @@
             lastFoodTime = 0;
             viralMeter = 0;
             premiumTicker = 0;
+            arenaEventTimer = 18;
+            if (bossEvent) {
+                scene.remove(bossEvent);
+                bossEvent = null;
+            }
             updatePremiumBanner();
             challengeProgress.scoreCurrent = 0;
             challengeProgress.dashCurrent = 0;
@@ -1129,6 +1232,7 @@
             particles.forEach(p => scene.remove(p));
             particles.length = 0;
             document.getElementById('kill-feed').innerHTML = '';
+            document.getElementById('boss-event').classList.add('hidden');
 
             GAME_STATE = 'PLAYING';
             document.getElementById('menu-layer').classList.add('hidden');
@@ -1189,6 +1293,9 @@
 
             if (GAME_STATE === 'PLAYING') {
                 snakes.forEach(s => s.update(delta, time));
+                arenaEventTimer -= delta;
+                if (arenaEventTimer <= 0) startBossEvent();
+                updateBossEvent(delta, time);
             } else {
                 snakes.forEach(s => {
                     if (!s.isDead) {
