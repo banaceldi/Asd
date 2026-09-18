@@ -769,6 +769,11 @@
                 this.moveAngle = Math.random() * Math.PI * 2;
                 this.isBoosting = false;
                 this.boostDepleteTimer = 0;
+                this.aiTarget = null;
+                this.aiRetargetTimer = 0;
+                this.aiStuckTimer = 0;
+                this.aiLastTargetDistance = Infinity;
+                this.aiWanderAngle = this.moveAngle;
 
                 const matColor = new THREE.MeshPhysicalMaterial({
                     color: this.colorHex,
@@ -896,33 +901,83 @@
                     if (this.parts.length > 30 && Math.random() < 0.005) this.isBoosting = true;
                     if (this.parts.length <= 15 || Math.random() < 0.03) this.isBoosting = false;
 
-                    let closestFood = null;
-                    let minDist = Infinity;
-                    const checkCount = Math.min(15, foods.length);
-                    for(let i=0; i<checkCount; i++) {
-                        let d = this.head.position.distanceToSquared(foods[i].mesh.position);
-                        if (d < minDist) { minDist = d; closestFood = foods[i]; }
+                    this.aiRetargetTimer -= delta;
+                    const targetMissing = !this.aiTarget || !this.aiTarget.mesh || !foods.includes(this.aiTarget);
+                    if (targetMissing || this.aiRetargetTimer <= 0) {
+                        let closestFood = null;
+                        let minDist = Infinity;
+                        const checkCount = Math.min(28, foods.length);
+                        for (let i = 0; i < checkCount; i++) {
+                            const candidate = foods[i];
+                            const distance = this.head.position.distanceToSquared(candidate.mesh.position);
+                            if (distance < minDist) {
+                                minDist = distance;
+                                closestFood = candidate;
+                            }
+                        }
+                        this.aiTarget = closestFood;
+                        this.aiRetargetTimer = 0.7 + Math.random() * 0.5;
+                        this.aiLastTargetDistance = Infinity;
                     }
 
-                    if (closestFood) {
-                        let targetAngle = Math.atan2(
-                            closestFood.mesh.position.z - this.head.position.z,
-                            closestFood.mesh.position.x - this.head.position.x
-                        );
-                        let diff = targetAngle - this.moveAngle;
-                        while (diff < -Math.PI) diff += Math.PI * 2;
-                        while (diff > Math.PI) diff -= Math.PI * 2;
-                        this.moveAngle += diff * 0.08;
+                    let steerX = Math.cos(this.aiWanderAngle) * 0.18;
+                    let steerZ = Math.sin(this.aiWanderAngle) * 0.18;
+                    if (this.aiTarget && this.aiTarget.mesh) {
+                        const targetX = this.aiTarget.mesh.position.x - this.head.position.x;
+                        const targetZ = this.aiTarget.mesh.position.z - this.head.position.z;
+                        const targetDistance = Math.sqrt(targetX * targetX + targetZ * targetZ);
+                        if (targetDistance > 8) {
+                            steerX += targetX / targetDistance;
+                            steerZ += targetZ / targetDistance;
+                            if (targetDistance > this.aiLastTargetDistance - 0.03) this.aiStuckTimer += delta;
+                            else this.aiStuckTimer = Math.max(0, this.aiStuckTimer - delta * 2);
+                            this.aiLastTargetDistance = targetDistance;
+                        } else {
+                            this.aiTarget = null;
+                            this.aiRetargetTimer = 0.25;
+                            this.aiWanderAngle = this.moveAngle + (Math.random() - 0.5) * 0.8;
+                            this.aiStuckTimer = 0;
+                        }
                     }
-                    
+
+                    // Power-ups are hazards to route around, preventing endless orbiting.
+                    for (let i = 0; i < powerUps.length; i++) {
+                        const power = powerUps[i];
+                        const awayX = this.head.position.x - power.position.x;
+                        const awayZ = this.head.position.z - power.position.z;
+                        const distanceSq = awayX * awayX + awayZ * awayZ;
+                        if (distanceSq < 18 * 18 && distanceSq > 0.01) {
+                            const distance = Math.sqrt(distanceSq);
+                            const force = (18 - distance) / 18;
+                            steerX += (awayX / distance) * force * 2.8;
+                            steerZ += (awayZ / distance) * force * 2.8;
+                        }
+                    }
+
                     const limit = mapSize / 2 - 25;
                     if (Math.abs(this.head.position.x) > limit || Math.abs(this.head.position.z) > limit) {
-                        let centerAngle = Math.atan2(-this.head.position.z, -this.head.position.x);
-                        let diff = centerAngle - this.moveAngle;
-                        while (diff < -Math.PI) diff += Math.PI * 2;
-                        while (diff > Math.PI) diff -= Math.PI * 2;
-                        this.moveAngle += diff * 0.15; 
+                        const centerX = -this.head.position.x;
+                        const centerZ = -this.head.position.z;
+                        const centerDistance = Math.max(1, Math.sqrt(centerX * centerX + centerZ * centerZ));
+                        steerX += (centerX / centerDistance) * 3.5;
+                        steerZ += (centerZ / centerDistance) * 3.5;
                     }
+
+                    if (this.aiStuckTimer > 0.8) {
+                        this.aiTarget = null;
+                        this.aiRetargetTimer = 0;
+                        this.aiStuckTimer = 0;
+                        this.aiWanderAngle = this.moveAngle + (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.8);
+                        steerX += Math.cos(this.aiWanderAngle) * 2.2;
+                        steerZ += Math.sin(this.aiWanderAngle) * 2.2;
+                    }
+
+                    const steerLength = Math.max(0.01, Math.sqrt(steerX * steerX + steerZ * steerZ));
+                    const desiredAngle = Math.atan2(steerZ / steerLength, steerX / steerLength);
+                    let diff = desiredAngle - this.moveAngle;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+                    this.moveAngle += Math.max(-0.12, Math.min(0.12, diff * 0.16));
                 }
 
                 if (this.isBoosting && this.parts.length > 15) {
