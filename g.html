@@ -192,6 +192,16 @@
         .floor-preview.ocean { background-color: #1769aa; background-image: linear-gradient(rgba(255,255,255,.86) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.86) 1px, transparent 1px); background-size: 12px 12px; }
         .floor-preview.ice { background-color: #2b9ed8; background-image: linear-gradient(rgba(255,255,255,.92) 2px, transparent 2px), linear-gradient(90deg, rgba(255,255,255,.92) 2px, transparent 2px); background-size: 17px 17px; }
         .floor-preview.deep { background-color: #123f78; background-image: linear-gradient(rgba(255,255,255,.72) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.72) 1px, transparent 1px); background-size: 9px 9px; }
+        .wallet { display: inline-flex; align-items: center; gap: 5px; color: #ffd166; background: rgba(255,209,102,.15); border: 1px solid rgba(255,209,102,.45); border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 950; }
+        .shop-panel { margin-top: 12px; padding: 10px; border-radius: 16px; background: rgba(23,38,82,0.08); border: 1px solid rgba(38,65,116,0.18); }
+        .shop-title { display: flex; justify-content: space-between; align-items: center; color: #4f5d7a; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+        .shop-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+        .shop-card { border: 2px solid rgba(255,255,255,.7); border-radius: 11px; padding: 6px 3px; background: rgba(255,255,255,.7); cursor: pointer; text-align: center; font-size: 9px; font-weight: 900; color: #44516a; min-width: 0; }
+        .shop-card.equipped { border-color: #ff477e; box-shadow: 0 0 0 2px rgba(255,71,126,.15); }
+        .shop-card.owned { border-color: #38bdf8; }
+        .shop-card:disabled { cursor: not-allowed; opacity: .58; }
+        .shop-card small { display: block; margin-top: 3px; font-size: 8px; color: #65738b; }
+        .accessory-icon { display: block; height: 24px; color: #ffd166; font-size: 19px; line-height: 24px; }
         .mode-panel { margin-top: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .mode-btn { border: 1px solid rgba(38,65,116,.22); border-radius: 11px; padding: 8px 4px; background: rgba(255,255,255,.62); color: #44516a; font-size: 9px; font-weight: 900; cursor: pointer; }
         .mode-btn.selected { color: #fff; border-color: #ff477e; background: linear-gradient(135deg, #ff477e, #7c5cff); box-shadow: 0 5px 15px rgba(124,92,255,.25); }
@@ -226,6 +236,7 @@
         <div class="top-bar">
             <div class="left-hud">
                 <div class="score-box" id="score-display">Skor: 0</div>
+                <div class="wallet">🪙 <span id="match-gold">0</span></div>
                 <div class="viral-box">
                     <div class="viral-label"><span>🔥 Viral</span><span id="viral-label">0%</span></div>
                     <div class="viral-track"><div id="viral-fill" class="viral-fill"></div></div>
@@ -274,6 +285,7 @@
                 </div>
             </div>
             <div class="menu-main">
+                <div class="wallet">🪙 <span id="wallet-gold">0</span> ALTIN</div>
                 <div id="game-over-stats" class="hidden stats">
                     Son Skor: <span id="final-score">0</span><br>
                     En Yüksek: <span id="best-score">0</span>
@@ -289,6 +301,10 @@
                     <div class="collection-title"><span>Yılanını seç</span><span id="collection-count">1/8</span></div>
                     <div class="skin-grid" id="skin-grid"></div>
                     <div class="achievement-line" id="achievement-line">🏆 İlk avını yap ve koleksiyonunu büyüt.</div>
+                </div>
+                <div class="shop-panel">
+                    <div class="shop-title"><span>Aksesuar mağazası</span><span>Görsel kozmetik</span></div>
+                    <div class="shop-grid" id="accessory-grid"></div>
                 </div>
                 <div class="floor-panel">
                     <div class="floor-title"><span>Zemin görünümü</span><span id="floor-count">Mavi grid</span></div>
@@ -328,20 +344,33 @@
         playerStats.selectedMode = playerStats.selectedMode || 'classic';
         playerStats.playerName = String(playerStats.playerName || 'Oyuncu').slice(0, 16);
         playerStats.selectedFloor = playerStats.selectedFloor || 'ocean';
+        playerStats.gold = Number(playerStats.gold || 0);
+        playerStats.selectedAccessory = playerStats.selectedAccessory || 'none';
+        playerStats.ownedAccessories = Array.isArray(playerStats.ownedAccessories) ? playerStats.ownedAccessories : ['none'];
         const floorStyles = [
             { id: 'ocean', name: 'Mavi grid', preview: 'ocean', ground: 0x1769aa, line: 0xffffff, opacity: 0.86, divisions: 60 },
             { id: 'ice', name: 'Buz grid', preview: 'ice', ground: 0x2b9ed8, line: 0xffffff, opacity: 0.92, divisions: 46 },
             { id: 'deep', name: 'Derin grid', preview: 'deep', ground: 0x123f78, line: 0xffffff, opacity: 0.72, divisions: 78 }
         ];
         const cosmetics = [
-            { id: 'classic', name: 'Candy', color: 0xff477e, glow: 0xff8fab, level: 1 },
-            { id: 'ocean', name: 'Ocean', color: 0x22d3ee, glow: 0x7ef9ff, level: 2 },
-            { id: 'royal', name: 'Royal', color: 0x8b5cf6, glow: 0xc4b5fd, level: 4 },
-            { id: 'sunset', name: 'Sunset', color: 0xff8a65, glow: 0xffd166, level: 6 },
-            { id: 'toxic', name: 'Toxic', color: 0x84cc16, glow: 0xd9f99d, level: 8 },
-            { id: 'cosmic', name: 'Cosmic', color: 0x2563eb, glow: 0xa78bfa, level: 10 },
-            { id: 'gold', name: 'Gold', color: 0xf59e0b, glow: 0xfff3a3, level: 15 },
-            { id: 'titan', name: 'Titan', color: 0xef4444, glow: 0xffd166, level: 20 }
+            { id: 'classic', name: 'Candy', color: 0xff477e, glow: 0xff8fab, price: 0 },
+            { id: 'ocean', name: 'Ocean', color: 0x22d3ee, glow: 0x7ef9ff, price: 80 },
+            { id: 'royal', name: 'Royal', color: 0x8b5cf6, glow: 0xc4b5fd, price: 140 },
+            { id: 'sunset', name: 'Sunset', color: 0xff8a65, glow: 0xffd166, price: 220 },
+            { id: 'toxic', name: 'Toxic', color: 0x84cc16, glow: 0xd9f99d, price: 320 },
+            { id: 'cosmic', name: 'Cosmic', color: 0x2563eb, glow: 0xa78bfa, price: 450 },
+            { id: 'gold', name: 'Gold', color: 0xf59e0b, glow: 0xfff3a3, price: 650 },
+            { id: 'titan', name: 'Titan', color: 0xef4444, glow: 0xffd166, price: 900 }
+        ];
+        const accessories = [
+            { id: 'none', name: 'Yok', icon: '—', price: 0 },
+            { id: 'halo', name: 'Halo', icon: '◉', price: 120, color: 0x7ef9ff },
+            { id: 'crown', name: 'Taç', icon: '♛', price: 260, color: 0xffd166 },
+            { id: 'horns', name: 'Boynuz', icon: '♢', price: 340, color: 0xff477e },
+            { id: 'star', name: 'Yıldız', icon: '✦', price: 480, color: 0xffffff },
+            { id: 'ruby', name: 'Ruby', icon: '◆', price: 700, color: 0xff477e },
+            { id: 'titan', name: 'Titan', icon: '✹', price: 1000, color: 0xffd166 },
+            { id: 'orbit', name: 'Orbit', icon: '◎', price: 1250, color: 0xa78bfa }
         ];
         let challengeProgress = {
             scoreTarget: 300,
@@ -786,18 +815,64 @@
             return cosmetics.find(item => item.id === playerStats.selectedSkin) || cosmetics[0];
         }
 
+        function addGold(amount, position = null) {
+            const gain = Math.max(0, Math.floor(amount));
+            if (!gain) return;
+            playerStats.gold += gain;
+            savePlayerStats();
+            if (position) createFloatingText(`+${gain} 🪙`, position, '#ffd166');
+            updateWalletUI();
+        }
+
+        function updateWalletUI() {
+            const wallet = document.getElementById('wallet-gold');
+            const matchGold = document.getElementById('match-gold');
+            if (wallet) wallet.textContent = playerStats.gold;
+            if (matchGold) matchGold.textContent = playerStats.gold;
+        }
+
+        function buyOrEquipSkin(id) {
+            const item = cosmetics.find(cosmetic => cosmetic.id === id);
+            if (!item) return;
+            if (!playerStats.unlockedSkins.includes(id)) {
+                if (playerStats.gold < item.price) {
+                    triggerViralBurst(new THREE.Vector3(), '🪙 Yeterli altın yok!', '#ff8a65');
+                    return;
+                }
+                playerStats.gold -= item.price;
+                playerStats.unlockedSkins.push(id);
+            }
+            playerStats.selectedSkin = id;
+            savePlayerStats();
+            updateProfileUI();
+        }
+
+        function buyOrEquipAccessory(id) {
+            const item = accessories.find(accessory => accessory.id === id);
+            if (!item) return;
+            if (!playerStats.ownedAccessories.includes(id)) {
+                if (playerStats.gold < item.price) {
+                    triggerViralBurst(new THREE.Vector3(), '🪙 Yeterli altın yok!', '#ff8a65');
+                    return;
+                }
+                playerStats.gold -= item.price;
+                playerStats.ownedAccessories.push(id);
+            }
+            playerStats.selectedAccessory = id;
+            savePlayerStats();
+            updateProfileUI();
+        }
+
         function updateProfileUI() {
             const grid = document.getElementById('skin-grid');
             if (grid) {
                 grid.innerHTML = cosmetics.map(item => {
-                    const unlocked = playerStats.level >= item.level || playerStats.unlockedSkins.includes(item.id);
-                    if (unlocked && !playerStats.unlockedSkins.includes(item.id)) playerStats.unlockedSkins.push(item.id);
-                    return `<button class="skin-card ${playerStats.selectedSkin === item.id ? 'selected' : ''} ${unlocked ? '' : 'locked'}" data-skin="${item.id}" ${unlocked ? '' : 'disabled'}><span class="skin-swatch" style="background:#${item.color.toString(16).padStart(6, '0')};color:#${item.glow.toString(16).padStart(6, '0')}"></span>${item.name}<br><small>${unlocked ? 'Açık' : `Lv ${item.level}`}</small></button>`;
+                    const owned = playerStats.unlockedSkins.includes(item.id);
+                    const label = playerStats.selectedSkin === item.id ? 'Kuşandı' : owned ? 'Giy' : `${item.price} 🪙`;
+                    return `<button class="skin-card ${playerStats.selectedSkin === item.id ? 'selected' : ''} ${owned ? 'owned' : ''}" data-skin="${item.id}"><span class="skin-swatch" style="background:#${item.color.toString(16).padStart(6, '0')};color:#${item.glow.toString(16).padStart(6, '0')}" ></span>${item.name}<br><small>${label}</small></button>`;
                 }).join('');
                 grid.querySelectorAll('[data-skin]').forEach(button => button.addEventListener('click', () => {
-                    playerStats.selectedSkin = button.dataset.skin;
-                    savePlayerStats();
-                    updateProfileUI();
+                    buyOrEquipSkin(button.dataset.skin);
                 }));
             }
             const rankNames = ['Bronz', 'Gümüş', 'Altın', 'Elmas', 'Titan'];
@@ -809,6 +884,16 @@
             if (rank) rank.textContent = rankNames[rankIndex];
             if (rating) rating.textContent = `${playerStats.rating} RP`;
             if (count) count.textContent = `${playerStats.unlockedSkins.length}/${cosmetics.length}`;
+            updateWalletUI();
+            const accessoryGrid = document.getElementById('accessory-grid');
+            if (accessoryGrid) {
+                accessoryGrid.innerHTML = accessories.map(item => {
+                    const owned = playerStats.ownedAccessories.includes(item.id);
+                    const label = playerStats.selectedAccessory === item.id ? 'Kuşandı' : owned ? 'Tak' : `${item.price} 🪙`;
+                    return `<button class="shop-card ${owned ? 'owned' : ''} ${playerStats.selectedAccessory === item.id ? 'equipped' : ''}" data-accessory="${item.id}"><span class="accessory-icon" style="color:#${(item.color || 0xffd166).toString(16).padStart(6, '0')}">${item.icon}</span>${item.name}<small>${label}</small></button>`;
+                }).join('');
+                accessoryGrid.querySelectorAll('[data-accessory]').forEach(button => button.addEventListener('click', () => buyOrEquipAccessory(button.dataset.accessory)));
+            }
             if (achievement) achievement.textContent = playerStats.achievements.length ? `🏆 ${playerStats.achievements.length} başarı açıldı` : '🏆 İlk avını yap ve koleksiyonunu büyüt.';
             const floorGrid = document.getElementById('floor-grid');
             if (floorGrid) {
@@ -850,6 +935,35 @@
             savePlayerStats();
             triggerViralBurst(playerSnake ? playerSnake.head.position : new THREE.Vector3(), `🏆 ${label}`, '#ffd166');
             updateProfileUI();
+        }
+
+        function createSnakeAccessory() {
+            const item = accessories.find(accessory => accessory.id === playerStats.selectedAccessory);
+            if (!item || item.id === 'none') return null;
+            const group = new THREE.Group();
+            const material = new THREE.MeshPhysicalMaterial({ color: item.color, emissive: item.color, emissiveIntensity: 1.2, metalness: .45, roughness: .18, clearcoat: 1 });
+            if (item.id === 'halo' || item.id === 'orbit') {
+                const ring = new THREE.Mesh(new THREE.TorusGeometry(item.id === 'orbit' ? 2.9 : 2.35, .16, 10, 32), material);
+                ring.rotation.x = Math.PI / 2;
+                group.add(ring);
+            } else if (item.id === 'crown') {
+                const crown = new THREE.Mesh(new THREE.ConeGeometry(1.25, 1.35, 5), material);
+                crown.position.y = 2.55;
+                group.add(crown);
+            } else if (item.id === 'horns') {
+                [-.85, .85].forEach(x => {
+                    const horn = new THREE.Mesh(new THREE.ConeGeometry(.34, 1.15, 8), material);
+                    horn.position.set(x, 1.65, .05);
+                    horn.rotation.z = x > 0 ? -.42 : .42;
+                    group.add(horn);
+                });
+            } else {
+                const gem = new THREE.Mesh(new THREE.IcosahedronGeometry(.72, 1), material);
+                gem.position.y = 2.45;
+                group.add(gem);
+            }
+            group.userData.spin = item.id === 'orbit' ? .035 : .018;
+            return group;
         }
 
         function updateViralMeter() {
@@ -965,6 +1079,8 @@
                 this.tongue.rotation.x = -Math.PI / 2;
                 this.head.add(this.tongue);
                 this.tongueTimer = 0;
+                this.accessory = isPlayer ? createSnakeAccessory() : null;
+                if (this.accessory) this.head.add(this.accessory);
 
                 // Daha uzun ve dolgun başlaması için parça sayısı 3 katına çıkarıldı.
                 const initialLength = isPlayer ? 35 : Math.floor(Math.random()*15 + 20);
@@ -1241,6 +1357,10 @@
                 this.headGlow.material.opacity = this.shield > 0 ? 0.8 : 0.18 + Math.sin(time * 8 + this.id) * 0.08;
                 this.headAura.material.opacity = this.shield > 0 ? 0.55 : 0.22 + Math.sin(time * 10 + this.id) * 0.12;
                 this.headAura.rotation.z += 0.03;
+                if (this.accessory) {
+                    this.accessory.rotation.y += this.accessory.userData.spin;
+                    this.accessory.position.y = Math.sin(time * 3.5) * 0.08;
+                }
                 this.parts.forEach((part, index) => {
                     const wave = 1 + Math.sin(time * 14 + index * 0.7 + this.id) * 0.08;
                     part.scale.setScalar(this.shield > 0 ? wave * 1.15 : wave);
@@ -1529,6 +1649,10 @@
                     snake.isBoosting = true;
                     setTimeout(() => { if (snake && !snake.isDead) snake.isBoosting = false; }, 1500);
                 }
+            }
+            if (snake.isPlayer) {
+                const goldGain = food.mesh.userData.type === 'super' ? 4 : food.mesh.userData.type === 'magnet' ? 2 : 1;
+                addGold(goldGain, food.mesh.position);
             }
             addXP(Math.max(2, Math.floor(value / 10)), 'Yem');
             if (snake.isPlayer && Math.random() < 0.18) {
