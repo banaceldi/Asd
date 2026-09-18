@@ -184,6 +184,10 @@
         let powerUps = [];
         let screenShake = 0;
         let currentTheme = 0;
+        let lastThemeSwitch = 0;
+        let lastSparklePulse = 0;
+        const NEARBY_SNAKE_DIST_SQ = 90 * 90;
+        const MAX_COLLISION_CHECKS = isMobile ? 7 : 12;
         const themes = [
             { sky: '#74c8ff', fog: '#9ad9ff', ground: '#c9f4b8', accent: '#ff477e' },
             { sky: '#7f7fd5', fog: '#c0c0ff', ground: '#dff7b8', accent: '#ff7af5' },
@@ -1168,7 +1172,8 @@
                 }
             }
 
-            if (Math.random() < 0.005) {
+            if (time - lastThemeSwitch > 5.5) {
+                lastThemeSwitch = time;
                 currentTheme = (currentTheme + 1) % themes.length;
                 const theme = themes[currentTheme];
                 scene.background = new THREE.Color(theme.sky);
@@ -1177,13 +1182,15 @@
                 borderMat.color = new THREE.Color(theme.accent);
             }
 
-            sparkleGeo.attributes.position.array.forEach((value, index) => {
-                if (index % 3 === 1) {
-                    const base = 12 + ((index / 3) % 7) * 7;
-                    sparkleGeo.attributes.position.array[index] = base + Math.sin(time * 0.7 + index) * 5;
+            if (time - lastSparklePulse > 0.05) {
+                lastSparklePulse = time;
+                const arr = sparkleGeo.attributes.position.array;
+                for (let index = 1; index < arr.length; index += 3) {
+                    const base = 12 + (((index / 3) % 7) * 7);
+                    arr[index] = base + Math.sin(time * 0.7 + index) * 5;
                 }
-            });
-            sparkleGeo.attributes.position.needsUpdate = true;
+                sparkleGeo.attributes.position.needsUpdate = true;
+            }
             sparkles.rotation.y += 0.0008;
             glowRing.rotation.z += 0.003;
             groundAura.rotation.z += 0.003;
@@ -1206,10 +1213,18 @@
                     }
 
                     let hit = false, killer = null;
+                    const candidates = [];
                     for (let j = 0; j < snakes.length; j++) {
                         if (i === j) continue;
                         let s2 = snakes[j];
                         if (s2.isDead) continue;
+                        if (s1.head.position.distanceToSquared(s2.head.position) < NEARBY_SNAKE_DIST_SQ) {
+                            candidates.push(s2);
+                        }
+                    }
+
+                    for (let c = 0; c < candidates.length && c < MAX_COLLISION_CHECKS; c++) {
+                        const s2 = candidates[c];
                         for (let p = 0; p < s2.parts.length; p += 3) {
                             if (s1.head.position.distanceToSquared(s2.parts[p].position) < 5.0) {
                                 hit = true; killer = s2; break;
