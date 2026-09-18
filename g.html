@@ -595,6 +595,7 @@
         const foodMats = foodColors.map(c => new THREE.MeshLambertMaterial({ color: c }));
         const superFoodMat = new THREE.MeshBasicMaterial({ color: 0xff477e });
         const magnetMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
+        const goldFoodMat = new THREE.MeshStandardMaterial({ color: 0xffd166, emissive: 0xffa500, emissiveIntensity: 1.8, metalness: .75, roughness: .16 });
 
         function createBossEvent() {
             const group = new THREE.Group();
@@ -685,8 +686,13 @@
             for(let i=0; i<count; i++) {
                 let mesh, val, fType = type;
                 if (type === 'normal' && !pos && Math.random() < 0.03) fType = 'magnet';
+                if (type === 'normal' && !pos && Math.random() < 0.045) fType = 'gold';
 
-                if (fType === 'magnet') {
+                if (fType === 'gold') {
+                    mesh = new THREE.Mesh(candyGeo, goldFoodMat);
+                    mesh.scale.setScalar(1.25);
+                    val = 25;
+                } else if (fType === 'magnet') {
                     mesh = new THREE.Mesh(magnetBoxGeo, magnetMat);
                     val = 20;
                 } else if (fType === 'super') {
@@ -713,7 +719,7 @@
                 const halo = new THREE.Mesh(
                     new THREE.TorusGeometry(1.9, 0.12, 12, 42),
                     new THREE.MeshBasicMaterial({
-                        color: fType === 'magnet' ? 0x00f2fe : fType === 'super' ? 0xff477e : mesh.material.color.clone(),
+                        color: fType === 'gold' ? 0xffd166 : fType === 'magnet' ? 0x00f2fe : fType === 'super' ? 0xff477e : mesh.material.color.clone(),
                         transparent: true,
                         opacity: 0.7
                     })
@@ -725,7 +731,7 @@
                 const aura = new THREE.Mesh(
                     new THREE.SphereGeometry(2.2, 16, 16),
                     new THREE.MeshBasicMaterial({
-                        color: fType === 'magnet' ? 0x00f2fe : fType === 'super' ? 0xff477e : mesh.material.color.clone(),
+                        color: fType === 'gold' ? 0xffd166 : fType === 'magnet' ? 0x00f2fe : fType === 'super' ? 0xff477e : mesh.material.color.clone(),
                         transparent: true,
                         opacity: 0.17,
                         side: THREE.DoubleSide
@@ -1174,6 +1180,8 @@
 
             die(killerName = null) {
                 this.isDead = true;
+                spawnParticleBurst(this.head.position, this.colorHex, this.isPlayer ? 36 : 20, this.isPlayer ? 4.5 : 3);
+                triggerScreenShake(this.isPlayer ? 7 : 2.5);
                 if(currentKingId === this.id) { crownMesh.visible = false; currentKingId = null; }
 
                 this.parts.forEach((p, index) => {
@@ -1711,7 +1719,7 @@
                 }
             }
             if (snake.isPlayer) {
-                const goldGain = food.mesh.userData.type === 'super' ? 4 : food.mesh.userData.type === 'magnet' ? 2 : 1;
+                const goldGain = food.mesh.userData.type === 'gold' ? 10 : food.mesh.userData.type === 'super' ? 4 : food.mesh.userData.type === 'magnet' ? 2 : 1;
                 addGold(goldGain, food.mesh.position);
             }
             addXP(Math.max(2, Math.floor(value / 10)), 'Yem');
@@ -1916,6 +1924,10 @@
                     f.mesh.rotation.x += f.mesh.userData.speed;
                     f.mesh.rotation.z += f.mesh.userData.speed * 0.8;
                     f.mesh.position.y = 1.6 + Math.sin(time * 5 + f.mesh.userData.angle) * 0.5;
+                } else if (f.mesh.userData.type === 'gold') {
+                    f.mesh.rotation.x += f.mesh.userData.speed * 1.8;
+                    f.mesh.rotation.z += f.mesh.userData.speed;
+                    f.mesh.position.y = 1.5 + Math.sin(time * 6 + f.mesh.userData.angle) * 0.55;
                 } else {
                     f.mesh.position.y = 1.2 + Math.sin(time * 3 + f.mesh.userData.angle) * 0.4;
                 }
@@ -1952,6 +1964,7 @@
                 scene.fog.color.set(theme.fog);
                 borderMat.color.set(theme.accent);
                 applyFloorStyle();
+                arenaLandmarks.forEach(landmark => landmark.children[0].material.color.set(theme.accent));
             }
 
             if (time - lastSparklePulse > 0.05) {
