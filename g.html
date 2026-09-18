@@ -212,13 +212,21 @@
 
         const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
         scene.add(ambientLight);
-        const dirLight = new THREE.DirectionalLight(0xeef7ff, 1.2);
+
+        const hemiLight = new THREE.HemisphereLight(0xdff6ff, 0x20456d, 1.7);
+        scene.add(hemiLight);
+
+        const dirLight = new THREE.DirectionalLight(0xeef7ff, 1.6);
         dirLight.position.set(80, 130, 55);
         scene.add(dirLight);
 
-        const rimLight = new THREE.PointLight(0xff97bf, 60, 350, 2);
+        const rimLight = new THREE.PointLight(0xff97bf, 80, 350, 2);
         rimLight.position.set(-80, 70, -60);
         scene.add(rimLight);
+
+        const accentLight = new THREE.PointLight(0x8ae3ff, 70, 260, 2);
+        accentLight.position.set(0, 48, 0);
+        scene.add(accentLight);
 
         const sceneGlow = new THREE.Mesh(
             new THREE.SphereGeometry(450, 48, 48),
@@ -228,10 +236,18 @@
 
         const mapSize = 400; 
         const groundGeo = new THREE.PlaneGeometry(mapSize, mapSize);
-        const groundMat = new THREE.MeshStandardMaterial({ color: '#c9f4b8', roughness: 0.9, metalness: 0.08 });
+        const groundMat = new THREE.MeshStandardMaterial({ color: '#c9f4b8', roughness: 0.9, metalness: 0.08, emissive: 0x5ec79d, emissiveIntensity: 0.18 });
         const ground = new THREE.Mesh(groundGeo, groundMat);
         ground.rotation.x = -Math.PI / 2;
         scene.add(ground);
+
+        const groundAura = new THREE.Mesh(
+            new THREE.RingGeometry(mapSize * 0.52, mapSize * 0.68, 96),
+            new THREE.MeshBasicMaterial({ color: 0xffd166, transparent: true, opacity: 0.22, side: THREE.DoubleSide })
+        );
+        groundAura.rotation.x = -Math.PI / 2;
+        groundAura.position.y = 0.14;
+        scene.add(groundAura);
 
         const glowRing = new THREE.Mesh(
             new THREE.RingGeometry(mapSize * 0.48, mapSize * 0.5, 128),
@@ -335,12 +351,25 @@
                 halo.position.y = -0.9;
                 mesh.add(halo);
 
+                const aura = new THREE.Mesh(
+                    new THREE.SphereGeometry(2.2, 16, 16),
+                    new THREE.MeshBasicMaterial({
+                        color: fType === 'magnet' ? 0x00f2fe : fType === 'super' ? 0xff477e : mesh.material.color.clone(),
+                        transparent: true,
+                        opacity: 0.17,
+                        side: THREE.DoubleSide
+                    })
+                );
+                aura.position.y = 0.5;
+                mesh.add(aura);
+
                 mesh.userData = {
                     angle: Math.random() * Math.PI,
                     speed: 0.02 + Math.random() * 0.03,
                     value: val,
                     type: fType,
                     halo: halo,
+                    aura: aura,
                     baseScale: mesh.scale.clone()
                 };
                 scene.add(mesh);
@@ -450,6 +479,9 @@
                 this.headAura.rotation.x = Math.PI / 2;
                 this.headAura.position.y = -0.35;
                 this.head.add(this.headAura);
+
+                this.trailCooldown = 0;
+                this.trailColor = colorHex;
 
                 const eyeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.35 });
                 const pupilMat = new THREE.MeshBasicMaterial({ color: 0x151515 });
@@ -585,6 +617,24 @@
                 this.head.position.x += Math.cos(this.moveAngle) * this.speed;
                 this.head.position.z += Math.sin(this.moveAngle) * this.speed;
                 this.head.rotation.y = -this.moveAngle - Math.PI/2; 
+
+                this.trailCooldown -= delta;
+                if (this.trailCooldown <= 0) {
+                    this.trailCooldown = this.isBoosting ? 0.035 : 0.06;
+                    const p = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.42, 10, 10),
+                        new THREE.MeshBasicMaterial({ color: this.trailColor, transparent: true, opacity: 0.5 })
+                    );
+                    p.position.copy(this.head.position);
+                    p.position.y = 1.4;
+                    p.userData = {
+                        life: 0.6,
+                        maxLife: 0.6,
+                        velocity: new THREE.Vector3((Math.random()-0.5)*0.7, 0.2 + Math.random()*0.5, (Math.random()-0.5)*0.7)
+                    };
+                    scene.add(p);
+                    particles.push(p);
+                }
 
                 this.tongueTimer += delta;
                 if (this.tongueTimer > 1.2) {
@@ -1082,6 +1132,10 @@
                     f.mesh.userData.halo.rotation.z += 0.03 + f.mesh.userData.speed;
                     f.mesh.userData.halo.material.opacity = 0.45 + Math.sin(time * 5 + f.mesh.userData.angle) * 0.2;
                 }
+                if (f.mesh.userData.aura) {
+                    f.mesh.userData.aura.rotation.y += 0.025;
+                    f.mesh.userData.aura.scale.setScalar(1 + Math.sin(time * 4 + f.mesh.userData.angle) * 0.18);
+                }
                 if(f.mesh.userData.type === 'magnet') {
                     f.mesh.rotation.x += f.mesh.userData.speed;
                     f.mesh.rotation.z += f.mesh.userData.speed * 0.8;
@@ -1132,7 +1186,12 @@
             sparkleGeo.attributes.position.needsUpdate = true;
             sparkles.rotation.y += 0.0008;
             glowRing.rotation.z += 0.003;
+            groundAura.rotation.z += 0.003;
             ground.rotation.z = Math.sin(time * 0.22) * 0.04;
+            dirLight.position.x = Math.sin(time * 0.5) * 90 + 20;
+            dirLight.position.z = Math.cos(time * 0.45) * 70 + 20;
+            accentLight.position.y = 30 + Math.sin(time * 1.3) * 15;
+            rimLight.position.x = -80 + Math.sin(time * 0.7) * 25;
 
             if (GAME_STATE === 'PLAYING') {
                 for (let i = snakes.length - 1; i >= 0; i--) {
