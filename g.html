@@ -76,9 +76,17 @@
 
         @media (orientation: portrait) {
             #ui-layer { padding-top: max(12px, env(safe-area-inset-top)); }
-            .top-bar { flex-direction: row; align-items: flex-start; }
-            .leaderboard { width: 150px; }
+            .top-bar { flex-direction: row; align-items: flex-start; padding-top: 82px; }
+            .left-hud { gap: 6px; }
+            .leaderboard { width: 138px; padding: 8px 9px; }
             .quest-panel, .xp-bar-wrap { width: 160px; }
+            .quest-panel { margin-top: 6px; }
+            .feature-banner { top: max(8px, env(safe-area-inset-top)); font-size: 9px; padding: 7px 12px; white-space: nowrap; }
+            .feature-badges { top: 44px; gap: 4px; max-width: 94vw; }
+            .status-pill { padding: 4px 7px; font-size: 8px; }
+            .combo-hud { top: 126px; font-size: 12px; padding: 7px 13px; }
+            #joystick-zone { width: min(138px, 31vw); height: min(138px, 31vw); }
+            #dash-btn { width: min(104px, 24vw); height: min(104px, 24vw); }
             .controls { padding-bottom: max(12px, env(safe-area-inset-bottom)); }
         }
 
@@ -90,6 +98,9 @@
             .powerup-chip { min-width: 42px; font-size: 9px; }
             #joystick-zone { width: 96px; height: 96px; }
             #dash-btn { width: 76px; height: 76px; }
+            .feature-banner { top: 6px; padding: 5px 10px; }
+            .feature-badges { top: 38px; max-width: 62vw; }
+            .top-bar { padding-top: 0; }
         }
 
         .floating-text { position: absolute; font-weight: 900; font-size: 26px; -webkit-text-stroke: 1px #fff; pointer-events: none; transform: translate(-50%, -50%); animation: floatUp 0.8s cubic-bezier(0.1, 0.8, 0.3, 1) forwards; z-index: 5; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
@@ -316,6 +327,7 @@
 
         // Kamera Kurulumu - Oyuncunun etrafı rahat görmesi için uzağa ve yukarı çekildi
         const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 800);
+        const cameraPositionTarget = new THREE.Vector3();
         
         const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -608,6 +620,10 @@
 
         function triggerScreenShake(amount) {
             screenShake = Math.max(screenShake, amount);
+        }
+
+        function haptic(duration = 10) {
+            if (isMobile && navigator.vibrate) navigator.vibrate(duration);
         }
 
         function xpAtLevelStart(level) {
@@ -1118,9 +1134,6 @@
         joystickZone.addEventListener('pointermove', (e) => { if(e.buttons > 0) handleJoystick(e); });
         joystickZone.addEventListener('pointerup', endJoystick);
         joystickZone.addEventListener('pointerleave', endJoystick);
-        joystickZone.addEventListener('touchstart', (e) => { updateJoystickCenter(); handleJoystick(e); }, {passive: false});
-        joystickZone.addEventListener('touchmove', (e) => { handleJoystick(e); }, {passive: false});
-        joystickZone.addEventListener('touchend', endJoystick);
         
         const keys = {};
         document.addEventListener('keydown', (e) => {
@@ -1136,6 +1149,7 @@
         const triggerDash = (e) => {
             e.preventDefault();
             if (playerSnake) {
+                haptic(14);
                 playerSnake.isBoosting = true;
                 challengeProgress.dashCurrent = Math.min(challengeProgress.dashTarget, challengeProgress.dashCurrent + 1);
                 playerStats.dashCount = (playerStats.dashCount || 0) + 1;
@@ -1148,8 +1162,6 @@
         dashBtn.addEventListener('pointerdown', triggerDash);
         dashBtn.addEventListener('pointerup', endDash);
         dashBtn.addEventListener('pointerleave', endDash);
-        dashBtn.addEventListener('touchstart', triggerDash, {passive: false});
-        dashBtn.addEventListener('touchend', endDash);
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
@@ -1321,6 +1333,7 @@
                 updateMissionUI();
                 showComboText(comboTicker);
                 if (comboTicker >= 5) {
+                    haptic(24);
                     triggerViralBurst(food.mesh.position, '🔥 VIRAL COMBO!', '#ffd166');
                     addXP(20, 'Viral combo');
                 }
@@ -1369,6 +1382,7 @@
         function applyPowerUpEffect(type) {
             if (!playerSnake || playerSnake.isDead) return;
             if (type === 'shield') {
+                haptic(18);
                 playerSnake.shield = 8;
                 triggerViralBurst(playerSnake.head.position, '🛡️ SHIELD!', '#a78bfa');
             }
@@ -1708,7 +1722,8 @@
                     const camHeight = 86;
                     const targetCamX = playerSnake.head.position.x;
                     const targetCamZ = playerSnake.head.position.z + camDist;
-                    camera.position.lerp(new THREE.Vector3(targetCamX, camHeight, targetCamZ), 0.1);
+                    cameraPositionTarget.set(targetCamX, camHeight, targetCamZ);
+                    camera.position.lerp(cameraPositionTarget, 0.1);
 
                     const lookTarget = playerSnake.head.position.clone();
                     lookTarget.z -= 15;
@@ -1721,7 +1736,8 @@
                     if (king) target.copy(king.head.position);
                 }
                 const menuTime = time * 0.2;
-                camera.position.lerp(new THREE.Vector3(target.x + Math.sin(menuTime) * 70, 80, target.z + Math.cos(menuTime) * 70), 0.05);
+                cameraPositionTarget.set(target.x + Math.sin(menuTime) * 70, 80, target.z + Math.cos(menuTime) * 70);
+                camera.position.lerp(cameraPositionTarget, 0.05);
                 camera.lookAt(target);
             }
 
