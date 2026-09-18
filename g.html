@@ -42,6 +42,8 @@
 
         .xp-bar-wrap { margin-top: 8px; width: 180px; background: rgba(11,18,39,0.22); border: 1px solid rgba(255,255,255,0.4); border-radius: 999px; overflow: hidden; }
         .xp-bar { height: 10px; width: 0%; background: linear-gradient(90deg, #7ef9ff, #59d4ff, #ffcf5c); box-shadow: 0 0 18px rgba(126,249,255,0.7); transition: width 0.25s ease; }
+        .level-label { display: flex; justify-content: space-between; color: #fff; font-size: 10px; font-weight: 900; margin-bottom: 4px; text-shadow: 0 1px 5px rgba(0,0,0,.3); }
+        .level-label strong { color: #ffd166; }
 
         .powerup-strip { display: flex; gap: 6px; margin-top: 8px; }
         .powerup-chip { flex: 1; min-width: 52px; padding: 6px 4px; border-radius: 10px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.6); color: white; font-weight: 800; text-align: center; box-shadow: inset 0 1px 0 rgba(255,255,255,0.2); font-size: 10px; }
@@ -152,6 +154,7 @@
                     <div id="mission-list"></div>
                 </div>
                 <div class="xp-bar-wrap">
+                    <div class="level-label"><span>LEVEL <strong id="level-display">1</strong></span><span id="xp-label">0 / 160 XP</span></div>
                     <div id="xp-bar" class="xp-bar"></div>
                 </div>
                 <div class="powerup-strip">
@@ -183,6 +186,7 @@
                 <div class="task"><span>⚡ 3 Dash</span><span id="task-2">0/3</span></div>
                 <div class="task"><span>🔥 Combo x5</span><span id="task-3">0/5</span></div>
             </div>
+            <div class="stats" style="margin-top:12px;">Seviye <span id="profile-level">1</span> · Toplam XP <span id="profile-xp">0</span></div>
             <div class="quick-row">
                 <button class="mini-btn" id="challenge-btn">HEDEFİ GÖR</button>
                 <button class="mini-btn alt" id="share-btn">PAYLAŞ</button>
@@ -198,6 +202,9 @@
         let GAME_STATE = 'MENU'; 
         let bestScore = Number(localStorage.getItem('sweetSnakeBest') || 0);
         let playerStats = JSON.parse(localStorage.getItem('snakeRushStats') || '{"games":0,"wins":0,"comboBest":1,"dashCount":0,"lastShare":"","xp":0}');
+        playerStats.xp = Number(playerStats.xp || 0);
+        playerStats.level = Number(playerStats.level || 1);
+        playerStats.levelUps = Number(playerStats.levelUps || 0);
         let challengeProgress = {
             scoreTarget: 300,
             dashTarget: 3,
@@ -405,7 +412,7 @@
             arenaEventTimer = 28;
             if (won && playerSnake && !playerSnake.isDead) {
                 playerSnake.score += 250;
-                playerStats.xp += 100;
+                addXP(100, 'Titan ödülü');
                 viralMeter = Math.min(100, viralMeter + 45);
                 updatePlayerScore();
                 updateViralMeter();
@@ -537,11 +544,45 @@
             screenShake = Math.max(screenShake, amount);
         }
 
+        function xpAtLevelStart(level) {
+            const completed = Math.max(0, level - 1);
+            return completed * 100 + 60 * completed * Math.max(0, completed - 1) / 2;
+        }
+
         function updateXPBar() {
             const bar = document.getElementById('xp-bar');
             if (!bar) return;
-            const xp = Math.min(playerStats.xp || 0, 1000);
-            bar.style.width = `${(xp / 1000) * 100}%`;
+            const level = playerStats.level || 1;
+            const previousTotal = xpAtLevelStart(level);
+            const nextTotal = xpAtLevelStart(level + 1);
+            const current = Math.max(0, playerStats.xp - previousTotal);
+            const needed = nextTotal - previousTotal;
+            bar.style.width = `${Math.min(100, (current / needed) * 100)}%`;
+            const levelDisplay = document.getElementById('level-display');
+            const xpLabel = document.getElementById('xp-label');
+            const profileLevel = document.getElementById('profile-level');
+            const profileXp = document.getElementById('profile-xp');
+            if (levelDisplay) levelDisplay.textContent = level;
+            if (xpLabel) xpLabel.textContent = `${Math.floor(current)} / ${needed} XP`;
+            if (profileLevel) profileLevel.textContent = level;
+            if (profileXp) profileXp.textContent = Math.floor(playerStats.xp);
+        }
+
+        function addXP(amount, reason = 'XP') {
+            const gain = Math.max(0, Math.floor(amount));
+            if (!gain) return;
+            playerStats.xp += gain;
+            let levelledUp = false;
+            while (playerStats.xp >= xpAtLevelStart(playerStats.level + 1)) {
+                playerStats.level += 1;
+                playerStats.levelUps += 1;
+                levelledUp = true;
+            }
+            updateXPBar();
+            savePlayerStats();
+            if (levelledUp) {
+                triggerViralBurst(playerSnake ? playerSnake.head.position : new THREE.Vector3(), `LEVEL ${playerStats.level}!`, '#ffd166');
+            }
         }
 
         function updateViralMeter() {
@@ -1156,17 +1197,17 @@
                 showComboText(comboTicker);
                 if (comboTicker >= 5) {
                     triggerViralBurst(food.mesh.position, '🔥 VIRAL COMBO!', '#ffd166');
-                    playerStats.xp += 20;
+                    addXP(20, 'Viral combo');
                 }
                 if (viralMeter >= 100) {
                     viralMeter = 0;
-                    playerStats.xp += 40;
+                    addXP(40, 'Viral mode');
                     triggerViralBurst(snake.head.position, '⚡ VIRAL MODE!', '#7ef9ff');
                     snake.isBoosting = true;
                     setTimeout(() => { if (snake && !snake.isDead) snake.isBoosting = false; }, 1500);
                 }
             }
-            playerStats.xp += Math.max(2, Math.floor(value / 10));
+            addXP(Math.max(2, Math.floor(value / 10)), 'Yem');
             if (snake.isPlayer && Math.random() < 0.18) {
                 maybeSpawnPowerUp();
             }
@@ -1175,6 +1216,7 @@
 
         function gameOver() {
             playerStats.games += 1;
+            addXP(Math.max(10, Math.floor((playerSnake ? playerSnake.score : 0) / 25)), 'Maç sonucu');
             if (playerSnake && playerSnake.score > bestScore) {
                 bestScore = playerSnake.score;
                 localStorage.setItem('sweetSnakeBest', bestScore);
@@ -1440,8 +1482,7 @@
                             s1.score += scoreGain;
                             challengeProgress.scoreCurrent = Math.max(challengeProgress.scoreCurrent, s1.score);
                             if (s1.isPlayer) {
-                                playerStats.xp += baseValue;
-                                savePlayerStats();
+                                addXP(baseValue, 'Yem toplama');
                                 updateMissionUI();
                             }
 
